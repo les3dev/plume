@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@custom-variant light (&:where([color-schema="light"]));
+
+@theme {
+    --color-*: initial;
+    --color-fg: #efecda;
+    --color-fg-1: #efecdacc;
+    --color-fg-2: #efecdaaa;
+    --color-fg-3: #efecda22;
+    --color-gold: #f2cf84;
+    --color-debug: magenta;
+    --color-bg: #212120;
+    --color-bg-1: #343430;
+    --color-bg-2: #efecda44;
+    --color-bg-card: #16161566;
+    --color-backdrop: #efecda22;
+    --color-error: #ee795f;
+    --color-error-1: #e1564f;
+    --color-success: #b4f55e;
+    --color-primary: var(--color-gold);
+    --radius-btn: 1rem;
+    --radius-input: 1em;
+    --radius-card: 1rem;
+    --input-height: 2.4em;
+    --font-sans: "Space Grotesk Variable", system-ui, sans-serif;
+    --font-mono: "Space Mono", monospace;
+}
+
+[color-scheme="light"] {
+    --color-fg: #262521;
+    --color-fg-1: #5f5b49;
+    --color-fg-2: #21212088;
+    --color-fg-3: #21212022;
+    --color-gold: #dc9913;
+    --color-bg: #efecda;
+    --color-bg-1: #dcd5c0;
+    --color-bg-2: #d3c9ac;
+    --color-bg-card: #fffce9cc;
+    --color-backdrop: #26252144;
+    --color-error: #c5354d;
+    --color-error-1: #96182d;
+    --color-success: #1b8549;
+    --color-primary: var(--color-gold);
+}
+
+* {
+    outline: none; /* outline should be set specifically for each element with :focus-visible */
+}
+
+* {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+
+        background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border-radius: 3px;
+
+        background-color: var(--color-bg-1);
+
+        transition: background-color 0.15s;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        border-radius: 3px;
+
+        background-color: var(--color-bg-1);
+    }
+
+    &::-webkit-scrollbar-button {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    &::-webkit-scrollbar-corner {
+        background-color: transparent;
+    }
+}
+
+body {
+    @apply flex flex-col h-full w-full;
+    overflow: auto;
+    color: var(--color-fg);
+    background-color: var(--color-bg);
+}
+
+@import "./styles/typography.css";
+@import "./styles/forms.css";
+@import "./styles/tables.css";
+
+.badge {
+    color: var(--color-bg);
+    background-color: var(--color-fg);
+    width: 1.2rem;
+    height: 1.2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.6rem;
+}
