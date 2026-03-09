@@ -11,3 +11,4 @@ class MeetingContext {
 const key = Symbol();
 export const set_meeting_context = () => setContext(key, new MeetingContext());
 export const get_meeting_context = () => getContext<MeetingContext>(key);
+

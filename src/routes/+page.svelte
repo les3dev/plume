@@ -1,23 +1,34 @@
 <script lang="ts">
-    import {invoke} from "@tauri-apps/api/core";
-    import {get_meeting_context} from "../lib/meeting/meeting_context.svelte";
+    import SettingsQuery from "$lib/scripts/SettingsQuery.svelte";
+    import Dialog from "$lib/widgets/Dialog.svelte";
+    import { get_settings_context } from "$lib/settings/settings_context.svelte";
+    import SettingsIcon from "$lib/icons/SettingsIcon.svelte";
+	import Recorder from "$lib/recorder/Recorder.svelte";
+    
 
-    let name = $state("");
-    let greetMsg = $state("");
+    const settings = get_settings_context()
 
-    const meeting = get_meeting_context();
-
-    async function greet(event: Event) {
-        event.preventDefault();
-        // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-        greetMsg = await invoke("greet", {name});
-    }
+    let is_open = $state(false)
 </script>
+<div class="flex flex-col h-full">
+    <div class="flex justify-end p-4">
+        <button class="cursor-pointer" onclick={() => is_open = true}><SettingsIcon/></button>
+    </div>
+    <div class="flex items-center h-screen justify-center ">
+        {#if !settings.deepgram_key || !settings.openai_key}
+            <div class="text-center max-w-150 border border-dotted rounded-xl p-4">
+                Your open ai and deepgram api keys are not setup yet. Use the settings button to register your api keys locally.
+            </div>
+        {:else} 
+            <button class="text-center max-w-150 border border-dotted rounded-xl p-4 cursor-pointer">
+                <div>Upload your meeting record</div>
+                <div class="text-sm ">Accepted format: .mp3</div>
+            </button>
+        {/if}
+        <Recorder/>
+    </div>
+</div>
 
-<form class="flex flex-col h-full p-4 gap-4" onsubmit={greet}>
-    <h1>Hello world</h1>
-    <input id="greet-input" type="text" placeholder="Enter a name..." bind:value={name} />
-    <button class="btn" type="submit">Greet</button>
-    <button class="btn" onclick={() => meeting.start_transcript()}>Start meeting</button>
-    <p>{greetMsg}</p>
-</form>
+<Dialog {is_open} onrequestclose={() => is_open=false} position="center">
+    <SettingsQuery onclose={() => is_open = false}/>
+</Dialog>
