@@ -1,0 +1,17 @@
+[package]
+name = "audio-capture"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "audio_capture"
+path = "src/lib.rs"
+
+[features]
+wav = []
+
+[build-dependencies]
+# bindgen is optional — we hand-write the bindings below for simplicity
+# bindgen = "0.69"
+
+[dependencies]

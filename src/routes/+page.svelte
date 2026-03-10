@@ -1,24 +1,24 @@
 <script lang="ts">
-    import SettingsQuery from '$lib/scripts/SettingsQuery.svelte'
-    import Dialog from '$lib/widgets/Dialog.svelte'
-    import { get_settings_context } from '$lib/settings/settings_context.svelte'
-    import SettingsIcon from '$lib/icons/SettingsIcon.svelte'
-    import Recorder from '$lib/recorder/Recorder.svelte'
-    import Upload from '$lib/upload/Upload.svelte'
-    import { get_upload_context } from '$lib/upload/upload_context.svelte'
-    import CopyIcon from '$lib/icons/CopyIcon.svelte'
-    import DownloadIcon from '$lib/icons/DownloadIcon.svelte'
-    import PlayIcon from '$lib/icons/PlayIcon.svelte'
-    import SparklesIcon from '$lib/icons/SparklesIcon.svelte'
-    import Transcript from '$lib/transcript/Transcript.svelte'
+    import SettingsQuery from "$lib/scripts/SettingsQuery.svelte";
+    import Dialog from "$lib/widgets/Dialog.svelte";
+    import {get_settings_context} from "$lib/settings/settings_context.svelte";
+    import SettingsIcon from "$lib/icons/SettingsIcon.svelte";
+    import Recorder from "$lib/recorder/Recorder.svelte";
+    import Upload from "$lib/upload/Upload.svelte";
+    import {get_upload_context} from "$lib/upload/upload_context.svelte";
+    import CopyIcon from "$lib/icons/CopyIcon.svelte";
+    import DownloadIcon from "$lib/icons/DownloadIcon.svelte";
+    import PlayIcon from "$lib/icons/PlayIcon.svelte";
+    import SparklesIcon from "$lib/icons/SparklesIcon.svelte";
+    import Transcript from "$lib/transcript/Transcript.svelte";
 
-    const settings = get_settings_context()
-    const upload = get_upload_context()
+    const settings = get_settings_context();
+    const upload = get_upload_context();
 
-    let audio_ready = $state<string>()
-    let is_open = $state(false)
+    let audio_ready = $state<string>();
+    let is_open = $state(false);
 
-    let has_audio = $derived(audio_ready !== undefined || upload.audio_bytes !== undefined)
+    let has_audio = $derived(audio_ready !== undefined || upload.audio_bytes !== undefined);
 </script>
 
 <div class="flex h-screen flex-col">
@@ -49,29 +49,24 @@
         {#if !settings.deepgram_key || !settings.openai_key}
             <div class="flex h-full items-center justify-center">
                 <div class="max-w-150 rounded-xl border border-dotted p-4 text-center">
-                    Your open ai and deepgram api keys are not setup yet. Use the settings button to
-                    register your api keys locally.
+                    Your open ai and deepgram api keys are not setup yet. Use the settings button to register your api
+                    keys locally.
                 </div>
             </div>
-
         {:else if !has_audio}
             <div class="flex h-full items-center justify-center gap-6">
                 <Recorder
                     audio_ready={async (path) => {
-                        audio_ready = path
-                        await upload.transcribe_from_path(path)
+                        audio_ready = path;
+                        await upload.transcribe_from_path(path);
                     }}
                 />
                 <Upload />
             </div>
-
         {:else if !upload.transcript}
             <div class="flex h-full items-center justify-center">
-                <div class="rounded-xl border border-dashed border-bg-2 p-6 text-fg-2">
-                    Transcription en cours...
-                </div>
+                <div class="rounded-xl border border-dashed border-bg-2 p-6 text-fg-2">Transcription en cours...</div>
             </div>
-
         {:else}
             <div class="flex h-full justify-center">
                 <div class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2">
@@ -83,7 +78,7 @@
         {/if}
     </div>
 
-    <div class="shrink-0  border-bg-2 p-4">
+    <div class="shrink-0 border-bg-2 p-4">
         <div class="flex items-center justify-center gap-4">
             <button class="btn ghost" hidden={!has_audio}>
                 <SparklesIcon />
