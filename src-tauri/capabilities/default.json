@@ -3,5 +3,11 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": ["main"],
-  "permissions": ["core:default", "opener:default", "mic-recorder:default"]
+  "permissions": ["core:default", "opener:default", "mic-recorder:default",
+
+  "store:allow-load",
+  "store:allow-get",
+  "store:allow-set",
+  "store:allow-save",
+  "store:allow-delete"]
 }

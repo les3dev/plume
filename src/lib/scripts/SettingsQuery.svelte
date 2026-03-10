@@ -9,8 +9,14 @@
 
     const settings = get_settings_context()
   
-    let openai_key = $state(settings.openai_key)
-    let deepgram_key = $state(settings.deepgram_key)
+    let openai_key = $state("")
+    let deepgram_key = $state("")
+
+    $effect(() => {
+      console.log("effect triggered, settings.openai_key:", settings.openai_key)
+      openai_key = settings.openai_key ?? ""
+      deepgram_key = settings.deepgram_key ?? ""
+    })
   </script>
   
   <div class="flex flex-col gap-8  min-w-xl">
@@ -26,7 +32,7 @@
       <div class="flex gap-3">
         <button class="btn grow max-w-20!" onclick={() => settings.save_openai_key(openai_key)}>Save</button>
         {#if settings.openai_key}
-        <button class="btn grow error max-w-20!" onclick={() => {settings.save_openai_key(undefined); openai_key = undefined}}>Remove</button>
+        <button class="btn grow error max-w-20!" onclick={() => {settings.save_openai_key(undefined)}}>Remove</button>
         {/if}
       </div>
     </div>
@@ -35,9 +41,9 @@
       <label class="text-sm font-medium" for="deepgram-input">Deepgram API Key</label>
       <input id="deepgram-input" type="text" placeholder="deepgramkey.." bind:value={deepgram_key} />
       <div class="flex gap-3">
-        <button class="btn grow max-w-20!" onclick={() => settings.save_deepgram_key(deepgram_key)}>Save</button>
+        <button class="btn grow max-w-20" onclick={() => settings.save_deepgram_key(deepgram_key)}>Save</button>
         {#if settings.deepgram_key}
-        <button class="btn grow error max-w-20!" onclick={() => {settings.save_deepgram_key(undefined); deepgram_key = undefined}}>Remove</button>
+        <button class="btn grow error max-w-20" onclick={() => {settings.save_deepgram_key(undefined)}}>Remove</button>
         {/if}
       </div>
       <div class="text-xs text-fg-1">Your keys are saved locally on your computer and never shared with anyone</div>

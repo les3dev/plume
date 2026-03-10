@@ -20,12 +20,8 @@
                 Your open ai and deepgram api keys are not setup yet. Use the settings button to register your api keys locally.
             </div>
         {:else} 
-            <button class="text-center max-w-150 border border-dotted rounded-xl p-4 cursor-pointer">
-                <div>Upload your meeting record</div>
-                <div class="text-sm ">Accepted format: .mp3</div>
-            </button>
+            <Recorder/>
         {/if}
-        <Recorder/>
     </div>
 </div>
 

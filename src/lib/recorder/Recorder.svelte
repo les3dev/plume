@@ -2,6 +2,8 @@
     import {startRecording, stopRecording} from "tauri-plugin-mic-recorder-api";
     import {convertFileSrc} from "@tauri-apps/api/core";
     import {catch_error} from "$lib/helpers/catch_error";
+	import PlayIcon from "$lib/icons/PlayIcon.svelte";
+	import PauseIcon from "$lib/icons/PauseIcon.svelte";
 
     let is_recording = $state(false);
     let error_message = $state<string>();
@@ -32,8 +34,14 @@
     };
 </script>
 
-<div class="p-4 border border-bg-1 rounded-2xl">
-    <button class="btn" onclick={toggle_recording}>{is_recording ? "Stop recording" : "Start recording"}</button>
+<div class="p-8 rounded-2xl">
+    <button class="btn py-8! rounded-full!" onclick={toggle_recording}>
+        {#if is_recording}
+        <PauseIcon/>  Stop recording 
+        {:else}
+        <PlayIcon/>  Start recording 
+        {/if}
+    </button>
     {#if error_message !== undefined}
         <div class="text-error">{error_message}</div>
     {/if}

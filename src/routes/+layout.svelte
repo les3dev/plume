@@ -8,7 +8,6 @@
     set_meeting_context();
 
     set_settings_context()
-
 </script>
 
 {@render children()}
