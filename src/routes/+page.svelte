@@ -4,9 +4,13 @@
     import { get_settings_context } from "$lib/settings/settings_context.svelte";
     import SettingsIcon from "$lib/icons/SettingsIcon.svelte";
 	import Recorder from "$lib/recorder/Recorder.svelte";
+	import Upload from "$lib/upload/Upload.svelte";
+	import Transcript from "$lib/transcript/Transcript.svelte";
+	import { get_upload_context } from "$lib/upload/upload_context.svelte";
     
 
     const settings = get_settings_context()
+    const transcript = get_upload_context()
 
     let is_open = $state(false)
 </script>
@@ -21,6 +25,8 @@
             </div>
         {:else} 
             <Recorder/>
+            <Upload />
+            <Transcript/>
         {/if}
     </div>
 </div>

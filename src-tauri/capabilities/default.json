@@ -2,12 +2,20 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
-  "permissions": ["core:default", "opener:default", "mic-recorder:default",
-
-  "store:allow-load",
-  "store:allow-get",
-  "store:allow-set",
-  "store:allow-save",
-  "store:allow-delete"]
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "mic-recorder:default",
+    "store:allow-load",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-save",
+    "store:allow-delete",
+    "dialog:default",
+    "fs:default",
+    "http:default"
+  ]
 }
