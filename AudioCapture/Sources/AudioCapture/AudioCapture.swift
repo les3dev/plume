@@ -40,42 +40,33 @@ public typealias AudioDataCallback = @convention(c) (
 
         self.callback = callback
 
-        // Run on a background thread to avoid blocking the main/calling thread
         Task.detached(priority: .userInitiated) {
             do {
-                // 1. Request screen recording permission (required by ScreenCaptureKit)
                 let available = try await SCShareableContent.excludingDesktopWindows(
                     false, onScreenWindowsOnly: false
                 )
 
-                // 2. Build a filter that captures the entire display — audio only
                 guard let display = available.displays.first else {
-                    await MainActor.run { completion("No display found") }
+                    completion("No display found")  // ← No MainActor
                     return
                 }
 
-                // Exclude nothing: capture all app audio, no mic
                 let filter = SCContentFilter(
                     display: display,
                     excludingApplications: [],
                     exceptingWindows: []
                 )
 
-                // 3. Configure the stream — audio only, no video
                 let config = SCStreamConfiguration()
                 config.capturesAudio = true
-                config.excludesCurrentProcessAudio = false  // capture everything
+                config.excludesCurrentProcessAudio = false
                 config.sampleRate = 48000
                 config.channelCount = 2
-
-                // Minimise video overhead by making it tiny
                 config.width = 2
                 config.height = 2
-                config.minimumFrameInterval = CMTime(value: 1, timescale: 1) // 1 fps (ignored)
+                config.minimumFrameInterval = CMTime(value: 1, timescale: 1)
 
-                // 4. Create the stream and output handler
                 let output = AudioStreamOutput(callback: callback)
-
                 let stream = SCStream(filter: filter, configuration: config, delegate: output)
                 try stream.addStreamOutput(
                     output,
@@ -84,16 +75,16 @@ public typealias AudioDataCallback = @convention(c) (
                 )
                 try await stream.startCapture()
 
-                // Only assign after successful start
-                await MainActor.run {
+                // Update state on a background queue instead of MainActor
+                DispatchQueue.global(qos: .userInitiated).async {
                     self.streamOutput = output
                     self.stream = stream
                     self.isCapturing = true
-                    completion(nil)
+                    completion(nil)  // ← No MainActor
                 }
 
             } catch {
-                await MainActor.run { completion(error.localizedDescription) }
+                completion(error.localizedDescription)  // ← No MainActor
             }
         }
     }
@@ -108,15 +99,14 @@ public typealias AudioDataCallback = @convention(c) (
         Task.detached(priority: .userInitiated) {
             do {
                 try await stream.stopCapture()
-                await MainActor.run {
-                    self.stream = nil
-                    self.streamOutput = nil
-                    self.isCapturing = false
-                    self.callback = nil
-                    completion(nil)
-                }
+                // No MainActor
+                self.stream = nil
+                self.streamOutput = nil
+                self.isCapturing = false
+                self.callback = nil
+                completion(nil)
             } catch {
-                await MainActor.run { completion(error.localizedDescription) }
+                completion(error.localizedDescription)
             }
         }
     }
