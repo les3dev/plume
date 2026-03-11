@@ -16,6 +16,15 @@
     "store:allow-delete",
     "dialog:default",
     "fs:default",
-    "http:default"
-  ]
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [{"path": "$APPDATA/**"}]
+    },
+    "fs:allow-read-file",
+    "http:default",
+    {
+        "identifier": "http:allow-fetch",
+        "allow": [{ "url": "https://api.deepgram.com/**" }]
+    }
+]
 }

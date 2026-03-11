@@ -9,9 +9,10 @@
 	import { get_upload_context } from "$lib/upload/upload_context.svelte";
     
 
+
     const settings = get_settings_context()
     const transcript = get_upload_context()
-
+    let audio_ready = $state<string>()
     let is_open = $state(false)
 </script>
 <div class="flex flex-col h-full">
@@ -23,11 +24,24 @@
             <div class="text-center max-w-150 border border-dotted rounded-xl p-4">
                 Your open ai and deepgram api keys are not setup yet. Use the settings button to register your api keys locally.
             </div>
-        {:else} 
-            <Recorder/>
-            <Upload />
-            <Transcript/>
-        {/if}
+            {:else}
+
+            <Recorder audio_ready={async (path) => {
+                audio_ready = path
+                await transcript.transcribe_from_path(path)
+            }} 
+                hidden={audio_ready !== undefined || transcript.audio_bytes !== undefined}
+            />
+                {#if audio_ready}
+                    <p>Enregistrement reçu</p>
+                    <Transcript/>
+                {/if}
+            <Upload hidden={audio_ready !== undefined || transcript.audio_bytes !== undefined}/>
+                {#if transcript.audio_bytes}
+                    <p>Fichier reçu</p>
+                    <Transcript/>
+                {/if}
+        {/if}        
     </div>
 </div>
 

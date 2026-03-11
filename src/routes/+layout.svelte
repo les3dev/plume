@@ -5,10 +5,11 @@
     import {set_meeting_context} from "../lib/meeting/meeting_context.svelte";
 
     let {children} = $props();
-
-    set_meeting_context();
-    set_upload_context();
     set_settings_context()
+    set_upload_context();
+    set_meeting_context();
+
+
 </script>
 
 {@render children()}
