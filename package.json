@@ -22,6 +22,7 @@
     "@tauri-apps/plugin-fs": "~2.4.5",
     "@tauri-apps/plugin-http": "~2",
     "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-positioner": "^2.3.1",
     "@tauri-apps/plugin-store": "~2.4.2",
     "tailwindcss": "^4.2.1",
     "tauri-plugin-mic-recorder-api": "^2.0.0"

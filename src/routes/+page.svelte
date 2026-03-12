@@ -1,25 +1,25 @@
 <script lang="ts">
-    import SettingsQuery from '$lib/scripts/SettingsQuery.svelte'
-    import Dialog from '$lib/widgets/Dialog.svelte'
-    import { get_settings_context } from '$lib/settings/settings_context.svelte'
-    import SettingsIcon from '$lib/icons/SettingsIcon.svelte'
-    import Recorder from '$lib/recorder/Recorder.svelte'
-    import Upload from '$lib/upload/Upload.svelte'
-    import { get_upload_context } from '$lib/upload/upload_context.svelte'
-    import CopyIcon from '$lib/icons/CopyIcon.svelte'
-    import DownloadIcon from '$lib/icons/DownloadIcon.svelte'
-    import PlayIcon from '$lib/icons/PlayIcon.svelte'
-    import SparklesIcon from '$lib/icons/SparklesIcon.svelte'
-    import Transcript from '$lib/transcript/Transcript.svelte'
-    import SuperRecorder from '$lib/recorder/SuperRecorder.svelte'
+    import SettingsQuery from '$lib/scripts/SettingsQuery.svelte';
+    import Dialog from '$lib/widgets/Dialog.svelte';
+    import {get_settings_context} from '$lib/settings/settings_context.svelte';
+    import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
+    import Recorder from '$lib/recorder/Recorder.svelte';
+    import Upload from '$lib/upload/Upload.svelte';
+    import {get_upload_context} from '$lib/upload/upload_context.svelte';
+    import CopyIcon from '$lib/icons/CopyIcon.svelte';
+    import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
+    import PlayIcon from '$lib/icons/PlayIcon.svelte';
+    import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
+    import Transcript from '$lib/transcript/Transcript.svelte';
+    import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
 
-    const settings = get_settings_context()
-    const upload = get_upload_context()
+    const settings = get_settings_context();
+    const upload = get_upload_context();
 
-    let audio_ready = $state<string>()
-    let is_open = $state(false)
+    let audio_ready = $state<string>();
+    let is_open = $state(false);
 
-    let has_audio = $derived(audio_ready !== undefined || upload.audio_bytes !== undefined)
+    let has_audio = $derived(audio_ready !== undefined || upload.audio_bytes !== undefined);
 </script>
 
 <div class="flex h-screen flex-col">
@@ -55,14 +55,19 @@
                 </div>
             </div>
         {:else if !has_audio}
-            <div class="flex h-full items-center justify-center gap-6">
+            <div class="flex h-full flex-col items-center justify-center gap-6">
                 <Recorder
                     audio_ready={async (path) => {
-                        audio_ready = path
-                        await upload.transcribe_from_path(path)
+                        audio_ready = path;
+                        await upload.transcribe_from_path(path);
                     }}
                 />
-                <SuperRecorder />
+                <SuperRecorder
+                    onfinish={async (audio_path) => {
+                        // audio_ready = audio_path;
+                        // await upload.transcribe_from_path(audio_path);
+                    }}
+                />
                 <Upload />
             </div>
         {:else if !upload.transcript}

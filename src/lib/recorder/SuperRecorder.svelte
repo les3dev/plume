@@ -1,12 +1,22 @@
 <script lang="ts">
-    import {catch_error} from "$lib/helpers/catch_error";
-    import {convertFileSrc, invoke} from "@tauri-apps/api/core";
+    import {catch_error} from '$lib/helpers/catch_error';
+    import {convertFileSrc, invoke} from '@tauri-apps/api/core';
+
+    type Props = {
+        /**
+         * Called automatically when the recording stops
+         * @param audio_path The path of the saved save file, will be overwritten with the next recording.
+         */
+        onfinish: (audio_path: string) => void;
+    };
+    let {onfinish}: Props = $props();
+
     let audio_path = $state<string>();
 
     let error_message = $state<string>();
     let is_capturing = $state(false);
     const start_capture = async () => {
-        const error = await catch_error(() => invoke("start_capture"));
+        const error = await catch_error(() => invoke('start_capture'));
         if (error instanceof Error) {
             error_message = error.message;
             return;
@@ -15,7 +25,7 @@
     };
 
     const end_capture = async () => {
-        const current_path = await catch_error(() => invoke<string>("stop_capture"));
+        const current_path = await catch_error(() => invoke<string>('stop_capture'));
         if (current_path instanceof Error) {
             error_message = current_path.message;
             is_capturing = false;
@@ -28,11 +38,12 @@
             return;
         }
         audio_path = asset_path;
+        onfinish(audio_path);
         is_capturing = false;
     };
 </script>
 
-<div class="p-4 border border-bg-1 rounded-2xl flex flex-col gap-4">
+<div class="flex flex-col gap-4 rounded-2xl border border-bg-1 p-4">
     <div class="flex gap-4">
         <button class="btn" disabled={is_capturing} onclick={start_capture}>Start capture</button>
         <button class="btn" disabled={!is_capturing} onclick={end_capture}>Stop capture</button>
