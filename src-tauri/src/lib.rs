@@ -1,3 +1,9 @@
+mod audio;
+mod capture_state;
+mod commands;
+
+use audio_capture::AudioCapture;
+use crate::{capture_state::CaptureState, commands::start_capture::start_capture, commands::stop_capture::stop_capture};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
