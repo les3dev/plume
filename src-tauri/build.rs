@@ -1,24 +1,25 @@
 use std::process::Command;
+use std::path::Path;
 
 fn main() {
-    let dylib_src = "target/release/libAudioCapture.dylib";
-    let dylib_dst = "libs/libAudioCapture.dylib";
+    // 1. Point to where the Swift lib actually lives
+    let dylib_path = "target/release/libAudioCapture.dylib";
 
-    // Only copy if source exists (i.e. after the Swift lib has been built)
-    if std::path::Path::new(dylib_src).exists() {
-        std::fs::create_dir_all("libs").unwrap();
-        std::fs::copy(dylib_src, dylib_dst).unwrap();
-
-        // Fix the install name so dyld can find it via @rpath
+    if Path::new(dylib_path).exists() {
+        // 2. Run your install_name_tool on the file in-place in target/
         Command::new("install_name_tool")
-            .args(["-id", "@rpath/libAudioCapture.dylib", dylib_dst])
+            .args(["-id", "@rpath/libAudioCapture.dylib", dylib_path])
             .status()
             .expect("install_name_tool failed");
 
-        println!("cargo:rerun-if-changed=target/release/libAudioCapture.dylib");
+        // 3. Tell Cargo to watch the SOURCE of the lib, not the copy destination
+        println!("cargo:rerun-if-changed={}", dylib_path);
+        
+        // 4. Tell Cargo to look in target/release for the library during linking
+        println!("cargo:rustc-link-search=native=target/release");
     }
 
     println!("cargo:rustc-link-arg=-Wl,-rpath,@executable_path/../Resources");
-    println!("cargo:rustc-link-search=native=libs");
+
     tauri_build::build()
 }
