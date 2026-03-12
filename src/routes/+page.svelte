@@ -64,8 +64,8 @@
                 />
                 <SuperRecorder
                     onfinish={async (audio_path) => {
-                        // audio_ready = audio_path;
-                        // await upload.transcribe_from_path(audio_path);
+                        audio_ready = audio_path;
+                        await upload.transcribe_from_path(audio_path);
                     }}
                 />
                 <Upload />
