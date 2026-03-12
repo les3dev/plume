@@ -2970,6 +2970,7 @@ name = "plume"
 version = "0.1.0"
 dependencies = [
  "audio-capture",
+ "cpal",
  "serde",
  "serde_json",
  "tauri",
