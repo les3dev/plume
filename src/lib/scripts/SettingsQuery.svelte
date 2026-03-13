@@ -13,8 +13,8 @@
     let deepgram_key = $state("")
 
     $effect(() => {
-      console.log("effect triggered, settings.openai_key:", settings.openai_key)
-      openrouter_key = settings.openai_key ?? ""
+      console.log("effect triggered, settings.openai_key:", settings.openrouter_key)
+      openrouter_key = settings.openrouter_key ?? ""
       deepgram_key = settings.deepgram_key ?? ""
     })
   </script>
@@ -31,7 +31,7 @@
       <input id="openai-input" type="text" placeholder="openaikey.." bind:value={openrouter_key}/>
       <div class="flex gap-3">
         <button class="btn grow max-w-20!" onclick={() => settings.save_openai_key(openrouter_key)}>Save</button>
-        {#if settings.openai_key}
+        {#if settings.openrouter_key}
         <button class="btn grow error max-w-20!" onclick={() => {settings.save_openai_key(undefined)}}>Remove</button>
         {/if}
       </div>

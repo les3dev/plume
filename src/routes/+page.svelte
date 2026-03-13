@@ -11,27 +11,22 @@
     import PlayIcon from '$lib/icons/PlayIcon.svelte'
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte'
     import Transcript from '$lib/transcript/Transcript.svelte'
-    import { genererResume } from '$lib/transcript/test'
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
-
-
+    import { genererResume } from '$lib/openrouter/openrouter';
 
     const settings = get_settings_context();
     const upload = get_upload_context();
 
     let audio_ready = $state<string>();
     let is_open = $state(false);
-
-
     let has_audio = $derived(audio_ready !== undefined || upload.audio_bytes !== undefined);
 
-    
     let resume = $state("");
     let chargement = $state(false);
 
     const lancerResume = async () => {
         chargement = true
-        resume = await genererResume("Dis bonjour en allemand")
+        resume = await genererResume('1+1 = ' ,settings.openrouter_key)
         chargement = false
     }
 </script>
@@ -61,8 +56,7 @@
     </div>
 
     <div class="min-h-0 flex-1 px-6 pb-4">
-    <!-- <div class="flex-1 min-h-0 px-6 pb-4"> -->
-        {#if !settings.deepgram_key || !settings.openai_key}
+        {#if !settings.deepgram_key || !settings.openrouter_key}
             <div class="flex h-full items-center justify-center">
                 <div class="max-w-150 rounded-xl border border-dotted p-4 text-center">
                     Your openrouter keys and deepgram api keys are not setup yet. Use the settings button to

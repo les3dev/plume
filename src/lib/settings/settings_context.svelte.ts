@@ -5,7 +5,7 @@ import { getContext, setContext } from "svelte";
 const store_path = "settings.json"
 
 class SettingsContext extends StoreContext {
-    openai_key = $state<string>()
+    openrouter_key = $state<string>()
     deepgram_key = $state<string>()
 
     constructor(store_path: string) {
@@ -14,13 +14,13 @@ class SettingsContext extends StoreContext {
     }
 
     load_store = async () => {
-        this.openai_key = (await this.get_from_store<string>('openai_key')) ?? undefined
+        this.openrouter_key = (await this.get_from_store<string>('openai_key')) ?? undefined
         this.deepgram_key = (await this.get_from_store<string>('deepgram_key')) ?? undefined
     }
 
     save_openai_key = async (key: string | undefined) => {
         if (!browser) return
-        this.openai_key = key
+        this.openrouter_key = key
         await this.set_to_store('openai_key', key)
         await this.save_store()
     }
