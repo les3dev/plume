@@ -12,6 +12,8 @@
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {genererResume} from '$lib/openrouter/openrouter';
     import PlayerAudio from '$lib/widgets/PlayerAudio.svelte';
+    import { writeFile } from '@tauri-apps/plugin-fs';
+    import { save } from '@tauri-apps/plugin-dialog';
 
     const settings = get_settings_context();
     const upload = get_upload_context();
@@ -36,8 +38,23 @@
         chargement = false;
     };
 
+    const get_transcript_text = () =>
+    blocs.map((item: any) => `Speaker ${item.speaker + 1}: ${item.text}`).join('\n\n')
+
     const copy = async () => {
-        await navigator.clipboard.writeText(blocs.map((item: any) => `Speaker ${item.speaker + 1 }: ${item.text}`).join('\n\n'))
+        await navigator.clipboard.writeText(get_transcript_text())
+    }
+
+    const download = async () => {
+        const path = await save({
+            filters: [{name : 'Text', extensions : ['txt']}],
+            defaultPath: 'transcript.txt'
+        })
+        console.log('sauvegarder ds' , path)
+        if(!path) return
+
+        const encoder = new TextEncoder()
+        await writeFile(path, encoder.encode(get_transcript_text()))
     }
 </script>
 
@@ -50,7 +67,7 @@
             </div>
             <div class="flex items-end gap-4">
                 <button class="btn ghost" onclick={copy}><CopyIcon  /> copy</button>
-                <button class="btn ghost"><DownloadIcon />download</button>
+                <button class="btn ghost" onclick={download}><DownloadIcon />download</button>
             </div>
         {/if}
 

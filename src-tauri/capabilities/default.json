@@ -18,7 +18,10 @@
             "identifier": "fs:allow-read-file",
             "allow": [{"path": "$APPDATA/**"}]
         },
-        "fs:allow-read-file",
+        {
+        "identifier": "fs:allow-write-file",
+        "allow": [{"path": "$APPDATA/**"}]
+        },
         "http:default",
         {
             "identifier": "http:allow-fetch",
