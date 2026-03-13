@@ -1,4 +1,3 @@
-
 <script lang="ts">
     import SettingsQuery from '$lib/scripts/SettingsQuery.svelte';
     import Dialog from '$lib/widgets/Dialog.svelte';
@@ -8,11 +7,11 @@
     import {get_upload_context} from '$lib/upload/upload_context.svelte';
     import CopyIcon from '$lib/icons/CopyIcon.svelte';
     import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
-    import PlayIcon from '$lib/icons/PlayIcon.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import Transcript from '$lib/transcript/Transcript.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {genererResume} from '$lib/openrouter/openrouter';
+    import PlayerAudio from '$lib/widgets/PlayerAudio.svelte';
 
     const settings = get_settings_context();
     const upload = get_upload_context();
@@ -22,6 +21,7 @@
     let is_open = $state(false);
     let resume = $state('');
     let chargement = $state(false);
+    let blocs = $state<any[]>([]);
 
     const onAudioReady = async (path: string) => {
         audio_path = decodeURIComponent(path);
@@ -35,19 +35,22 @@
         resume = await genererResume('1+1 = ', settings.openrouter_key);
         chargement = false;
     };
+
+    const copy = async () => {
+        await navigator.clipboard.writeText(blocs.map((item: any) => `Speaker ${item.speaker + 1 }: ${item.text}`).join('\n\n'))
+    }
 </script>
 
 <div class="flex h-screen flex-col">
     <div class="flex shrink-0 justify-between p-4">
         {#if meeting_state}
-            <button class="btn">
-                <PlayIcon />
-                {audio_path?.split('/').pop() ?? 'audio'}
-                <span class="opacity-50">00:30</span>
-            </button>
+            <div class="flex items-center gap-3">
+                <audio controls src={audio_path} class="h-10"></audio>
+                <!-- <PlayerAudio src={audio_path}/> -->
+            </div>
             <div class="flex items-end gap-4">
-                <button class="btn ghost"><CopyIcon /> copy</button>
-                <button class="btn ghost"><DownloadIcon /> download</button>
+                <button class="btn ghost" onclick={copy}><CopyIcon  /> copy</button>
+                <button class="btn ghost"><DownloadIcon />download</button>
             </div>
         {/if}
 
@@ -67,7 +70,7 @@
         {:else if !meeting_state}
             <div class="flex h-full flex-col items-center justify-center gap-6">
                 <SuperRecorder onfinish={onAudioReady} />
-                <Upload onFinish={onAudioReady}/>
+                <Upload onFinish={onAudioReady} />
             </div>
         {:else if meeting_state === 'record'}
             <div class="flex h-full items-center justify-center">
@@ -81,7 +84,7 @@
                     class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2"
                 >
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
-                        <Transcript />
+                        <Transcript blocs_ready={(received) => (blocs = received)} />
                     </div>
                 </div>
             </div>

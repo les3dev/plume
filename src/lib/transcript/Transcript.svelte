@@ -1,30 +1,47 @@
-<script lang="ts">
+ <script lang="ts">
     import { get_settings_context } from '$lib/settings/settings_context.svelte'
     import { get_upload_context } from '$lib/upload/upload_context.svelte'
-    const upload = get_upload_context()
-    const settings = get_settings_context()
-    const getSegments = () => {
-        if (!upload.transcript){
-            return []
-        }
-        const words = upload.transcript.results.channels[0].alternatives[0].words
-        const blocs = []
 
-        for (const word of words) {
-            const last_bloc = blocs[blocs.length - 1]
-
-            if (last_bloc && last_bloc.speaker === word.speaker) {
-                last_bloc.text += " " + word.punctuated_word
-            } else {
-                blocs.push({ speaker: word.speaker, text: word.punctuated_word })
-            }
-        }
-        return blocs
+    type Props = {
+        blocs_ready?: (blocs: any[]) => void
     }
+    let { blocs_ready} : Props = $props()
 
-    const blocs = $derived(getSegments())
-    let resume = $state("")
-    let chargement = $state(false)
+    $effect(() => {
+        blocs_ready?.(blocs)
+    })
+
+    const upload = get_upload_context()
+    // const settings = get_settings_context()
+
+    const get_segments = () => {
+    if (!upload.transcript){
+        return []
+    } 
+
+    const channels = upload.transcript.results.channels
+    const best_channel = channels.reduce((best: any, current: any) => {
+        return current.alternatives[0].words.length > best.alternatives[0].words.length 
+            ? current 
+            : best
+    })
+
+    const words = best_channel.alternatives[0].words
+    const blocs: any[] = []
+    for (const word of words) {
+        const last = blocs[blocs.length - 1]
+        if (last && last.speaker === word.speaker) {
+            last.text += ' ' + word.punctuated_word
+        } else {
+            blocs.push({ speaker: word.speaker, text: word.punctuated_word })
+        }
+    }
+    return blocs
+}
+    const blocs = $derived(get_segments())
+    // let resume = $state("")
+    // let chargement = $state(false)
+
 </script>
 
 {#if upload.error}

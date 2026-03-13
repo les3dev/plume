@@ -32,7 +32,7 @@ class UploadContext {
         console.log('transcription lancé')
         try {
             const response = await fetch(
-                'https://api.deepgram.com/v1/listen?model=nova-3&detect_language=true&diarize=true&punctuate=true',
+                'https://api.deepgram.com/v1/listen?model=nova-3&detect_language=true&diarize=true&punctuate=true&multichannel=true&utterances=true',
                 {
                     method: 'POST',
                     headers: {
