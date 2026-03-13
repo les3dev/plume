@@ -1,26 +1,30 @@
 <script lang="ts">
+    import { get_settings_context } from '$lib/settings/settings_context.svelte'
     import { get_upload_context } from '$lib/upload/upload_context.svelte'
     const upload = get_upload_context()
-
+    const settings = get_settings_context()
     const getSegments = () => {
-        if (!upload.transcript) return []
-
+        if (!upload.transcript){
+            return []
+        }
         const words = upload.transcript.results.channels[0].alternatives[0].words
-        const segments = []
+        const blocs = []
 
         for (const word of words) {
-            const lastSegment = segments[segments.length - 1]
+            const last_bloc = blocs[blocs.length - 1]
 
-            if (lastSegment && lastSegment.speaker === word.speaker) {
-                lastSegment.text += " " + word.punctuated_word
+            if (last_bloc && last_bloc.speaker === word.speaker) {
+                last_bloc.text += " " + word.punctuated_word
             } else {
-                segments.push({ speaker: word.speaker, text: word.punctuated_word })
+                blocs.push({ speaker: word.speaker, text: word.punctuated_word })
             }
         }
-        return segments
+        return blocs
     }
 
-    const segments = $derived(getSegments())
+    const blocs = $derived(getSegments())
+    let resume = $state("")
+    let chargement = $state(false)
 </script>
 
 {#if upload.error}
@@ -28,10 +32,10 @@
 
 {:else if upload.transcript}
     <div class="flex flex-col">
-        {#each segments as segment, i}
+        {#each blocs as segment, i}
             <div class="border-b border-bg-1 py-4 last:border-0">
 
-                {#if i === 0 || segments[i - 1].speaker !== segment.speaker}
+                {#if i === 0 || blocs[i - 1].speaker !== segment.speaker}
                     <p class="mb-2 text-sm font-bold">Speaker {segment.speaker + 1}</p>
                 {/if}
 

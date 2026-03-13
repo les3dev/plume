@@ -9,12 +9,12 @@
 
     const settings = get_settings_context()
   
-    let openai_key = $state("")
+    let openrouter_key = $state("")
     let deepgram_key = $state("")
 
     $effect(() => {
       console.log("effect triggered, settings.openai_key:", settings.openai_key)
-      openai_key = settings.openai_key ?? ""
+      openrouter_key = settings.openai_key ?? ""
       deepgram_key = settings.deepgram_key ?? ""
     })
   </script>
@@ -27,10 +27,10 @@
 
   
     <div class="flex flex-col gap-3">
-      <label class="text-sm font-medium" for="openai-input">OpenAI API Key</label>
-      <input id="openai-input" type="text" placeholder="openaikey.." bind:value={openai_key}/>
+      <label class="text-sm font-medium" for="openai-input">OpenRouter Key</label>
+      <input id="openai-input" type="text" placeholder="openaikey.." bind:value={openrouter_key}/>
       <div class="flex gap-3">
-        <button class="btn grow max-w-20!" onclick={() => settings.save_openai_key(openai_key)}>Save</button>
+        <button class="btn grow max-w-20!" onclick={() => settings.save_openai_key(openrouter_key)}>Save</button>
         {#if settings.openai_key}
         <button class="btn grow error max-w-20!" onclick={() => {settings.save_openai_key(undefined)}}>Remove</button>
         {/if}

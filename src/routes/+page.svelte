@@ -1,17 +1,20 @@
 <script lang="ts">
-    import SettingsQuery from '$lib/scripts/SettingsQuery.svelte';
-    import Dialog from '$lib/widgets/Dialog.svelte';
-    import {get_settings_context} from '$lib/settings/settings_context.svelte';
-    import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
-    import Recorder from '$lib/recorder/Recorder.svelte';
-    import Upload from '$lib/upload/Upload.svelte';
-    import {get_upload_context} from '$lib/upload/upload_context.svelte';
-    import CopyIcon from '$lib/icons/CopyIcon.svelte';
-    import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
-    import PlayIcon from '$lib/icons/PlayIcon.svelte';
-    import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
-    import Transcript from '$lib/transcript/Transcript.svelte';
+    import SettingsQuery from '$lib/scripts/SettingsQuery.svelte'
+    import Dialog from '$lib/widgets/Dialog.svelte'
+    import { get_settings_context } from '$lib/settings/settings_context.svelte'
+    import SettingsIcon from '$lib/icons/SettingsIcon.svelte'
+    import Recorder from '$lib/recorder/Recorder.svelte'
+    import Upload from '$lib/upload/Upload.svelte'
+    import { get_upload_context } from '$lib/upload/upload_context.svelte'
+    import CopyIcon from '$lib/icons/CopyIcon.svelte'
+    import DownloadIcon from '$lib/icons/DownloadIcon.svelte'
+    import PlayIcon from '$lib/icons/PlayIcon.svelte'
+    import SparklesIcon from '$lib/icons/SparklesIcon.svelte'
+    import Transcript from '$lib/transcript/Transcript.svelte'
+    import { genererResume } from '$lib/transcript/test'
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
+
+
 
     const settings = get_settings_context();
     const upload = get_upload_context();
@@ -19,7 +22,18 @@
     let audio_ready = $state<string>();
     let is_open = $state(false);
 
+
     let has_audio = $derived(audio_ready !== undefined || upload.audio_bytes !== undefined);
+
+    
+    let resume = $state("");
+    let chargement = $state(false);
+
+    const lancerResume = async () => {
+        chargement = true
+        resume = await genererResume("Dis bonjour en allemand")
+        chargement = false
+    }
 </script>
 
 <div class="flex h-screen flex-col">
@@ -47,10 +61,11 @@
     </div>
 
     <div class="min-h-0 flex-1 px-6 pb-4">
+    <!-- <div class="flex-1 min-h-0 px-6 pb-4"> -->
         {#if !settings.deepgram_key || !settings.openai_key}
             <div class="flex h-full items-center justify-center">
                 <div class="max-w-150 rounded-xl border border-dotted p-4 text-center">
-                    Your open ai and deepgram api keys are not setup yet. Use the settings button to
+                    Your openrouter keys and deepgram api keys are not setup yet. Use the settings button to
                     register your api keys locally.
                 </div>
             </div>
@@ -88,6 +103,7 @@
             </div>
         {/if}
     </div>
+    
 
     <div class="shrink-0 border-bg-2 p-4">
         <div class="flex items-center justify-center gap-4">
@@ -95,10 +111,13 @@
                 <SparklesIcon />
                 transcript
             </button>
-            <button class="btn ghost" hidden={!has_audio}>
+            <button class="btn ghost" hidden={!has_audio} onclick={lancerResume}>
                 <SparklesIcon />
-                résumé interne
+                résumé
             </button>
+            {#if resume}
+                <p class="mt-4 text-debug">{resume}</p>
+            {/if}
             <button class="btn ghost" hidden={!has_audio}>
                 <SparklesIcon />
                 compte rendu
@@ -110,6 +129,7 @@
         </div>
     </div>
 </div>
+<p></p>
 
 <Dialog {is_open} onrequestclose={() => (is_open = false)} position="center">
     <SettingsQuery onclose={() => (is_open = false)} />

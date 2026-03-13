@@ -16,6 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "@deepgram/sdk": "^5.0.0",
+    "@openrouter/ai-sdk-provider": "^2.3.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "~2.6.0",
@@ -26,6 +27,7 @@
     "@tauri-apps/plugin-store": "~2.4.2",
     "@types/luxon": "^3.7.1",
     "luxon": "^3.7.2",
+    "ai": "^6.0.116",
     "tailwindcss": "^4.2.1",
     "tauri-plugin-mic-recorder-api": "^2.0.0"
   },
