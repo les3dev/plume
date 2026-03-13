@@ -21,13 +21,17 @@
     //     console.log("fichier recu", audio_file_bytes)   
     // }
     type Props = {
-        hidden?: boolean
+        onFinish? : (path:string) => void
+
     }
-    let { hidden = false, }: Props = $props()
+    let { onFinish }: Props = $props()
     const upload = get_upload_context()
 </script>
-{#if !hidden}
-    <button class="btn p-8! rounded-full!" onclick={async () => { await upload.upload() }}>
-        <DownloadIcon /> {upload.file_name ?? "Upload"}
+    <button class="btn p-6! rounded-full!" onclick={
+        async () => {
+            const path = await upload.upload()
+            if(path) onFinish?.(path)
+        }
+    }>
+        <DownloadIcon /> {upload.file_name ?? "Upload file audio"}
     </button>
-{/if}

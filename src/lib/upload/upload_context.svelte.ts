@@ -22,7 +22,7 @@ class UploadContext {
         }
         this.file_name = selected_file_path.split('/').pop()
         this.audio_bytes = await readFile(selected_file_path)
-        await this.transcribe()
+        return selected_file_path
     }
 
     transcribe = async () => {
