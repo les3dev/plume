@@ -18,7 +18,6 @@
     import Popover from '$lib/widgets/Popover.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlane from '$lib/icons/PaperPlane.svelte';
-    import PlayerAudio from '$lib/widgets/PlayerAudio.svelte';
 
     const settings = get_settings_context();
     const generate = get_generate_context();
@@ -33,7 +32,7 @@
 
     const on_audio_ready = async (path: string) => {
     audio_path = decodeURIComponent(path); 
-    const system_path = new URL(decodeURIComponent(path)).pathname; // users/..
+    const system_path = decodeURIComponent(new URL(decodeURIComponent(path)).pathname); // users/..
     meeting_state = 'record';
     await transcribe.transcribe_from_path(system_path);
     meeting_state = 'transcript';
