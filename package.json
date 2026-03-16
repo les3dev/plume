@@ -16,6 +16,9 @@
   "license": "MIT",
   "dependencies": {
     "@deepgram/sdk": "^5.0.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
+    "@fontsource/bricolage-grotesque": "^5.2.10",
+    "@fontsource/source-serif-pro": "^5.2.5",
     "@openrouter/ai-sdk-provider": "^2.3.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/api": "^2",
@@ -26,8 +29,8 @@
     "@tauri-apps/plugin-positioner": "^2.3.1",
     "@tauri-apps/plugin-store": "~2.4.2",
     "@types/luxon": "^3.7.1",
-    "luxon": "^3.7.2",
     "ai": "^6.0.116",
+    "luxon": "^3.7.2",
     "tailwindcss": "^4.2.1",
     "tauri-plugin-mic-recorder-api": "^2.0.0"
   },

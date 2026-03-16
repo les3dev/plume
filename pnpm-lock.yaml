@@ -11,6 +11,15 @@ importers:
       '@deepgram/sdk':
         specifier: ^5.0.0
         version: 5.0.0
+      '@fontsource-variable/bricolage-grotesque':
+        specifier: ^5.2.10
+        version: 5.2.10
+      '@fontsource/bricolage-grotesque':
+        specifier: ^5.2.10
+        version: 5.2.10
+      '@fontsource/source-serif-pro':
+        specifier: ^5.2.5
+        version: 5.2.5
       '@openrouter/ai-sdk-provider':
         specifier: ^2.3.0
         version: 2.3.0(ai@6.0.116(zod@4.3.6))(zod@4.3.6)
@@ -41,12 +50,12 @@ importers:
       '@types/luxon':
         specifier: ^3.7.1
         version: 3.7.1
-      luxon:
-        specifier: ^3.7.2
-        version: 3.7.2
       ai:
         specifier: ^6.0.116
         version: 6.0.116(zod@4.3.6)
+      luxon:
+        specifier: ^3.7.2
+        version: 3.7.2
       tailwindcss:
         specifier: ^4.2.1
         version: 4.2.1
@@ -265,6 +274,15 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource-variable/bricolage-grotesque@5.2.10':
+    resolution: {integrity: sha512-5EDsCqgGpKVcJWE4sg9ydli+t5WM97mISYw5lla/Ev4z71FwXh1oN0YUU8xjkRW9+wBCGD9R+ntAvI8G4bUFJg==}
+
+  '@fontsource/bricolage-grotesque@5.2.10':
+    resolution: {integrity: sha512-V2xS+1P7C8IrSypXLUx/bLtX/LsTlYtV2k2CsU+S/0t8qepZ2hvKSlyJIx7Ub/iY8Bbnj+IjAuUF9nvFz+BbIg==}
+
+  '@fontsource/source-serif-pro@5.2.5':
+    resolution: {integrity: sha512-MTsjMrl2+81dar37wV1taDYzU+o9ArcuBVBkXRNb6JuNCBmrKOIAAmI1wC3cE+Q0eAlgXlfNrvZ7swP3l2M8tQ==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1192,6 +1210,12 @@ snapshots:
 
   '@esbuild/win32-x64@0.25.12':
     optional: true
+
+  '@fontsource-variable/bricolage-grotesque@5.2.10': {}
+
+  '@fontsource/bricolage-grotesque@5.2.10': {}
+
+  '@fontsource/source-serif-pro@5.2.5': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

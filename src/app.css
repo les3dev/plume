@@ -52,6 +52,7 @@ body {
     overflow: auto;
     color: var(--color-fg);
     background-color: var(--color-bg);
+    font-family: 'Bricolage Grotesque Variable', sans-serif;
 }
 
 /* scrollbar */
