@@ -1,14 +1,16 @@
 import { browser } from "$app/environment";
 import { StoreContext } from "$lib/helpers/StoreContext";
+import type { SpeechBlock } from "$lib/transcribe/Transcribe.svelte";
 
 const store_path = "sessions.json"
 
 type Session = {
     id: string,
+    name: string,
     date:string,
     audio_path : string,
     transcript : any,
-    blocs : any[],
+    speech_blocks : SpeechBlock[],
 }
 
 class SessionsContext extends StoreContext {

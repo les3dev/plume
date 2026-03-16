@@ -8,7 +8,7 @@
     import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
     import Transcript from '$lib/transcribe/Transcribe.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
-    import { writeFile} from '@tauri-apps/plugin-fs';
+    import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
     import {convertFileSrc} from '@tauri-apps/api/core';
     import {get_generate_context} from '$lib/generate/generate_context.svelte';
@@ -16,8 +16,9 @@
     import type {SpeechBlock} from '$lib/transcribe/Transcribe.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import Popover from '$lib/widgets/Popover.svelte';
-    import { open } from '@tauri-apps/plugin-shell';
+    import {open} from '@tauri-apps/plugin-shell';
     import PaperPlane from '$lib/icons/PaperPlane.svelte';
+    import PlayerAudio from '$lib/widgets/PlayerAudio.svelte';
 
     const settings = get_settings_context();
     const generate = get_generate_context();
@@ -28,12 +29,14 @@
     let audio_path = $state<string>();
     let is_open = $state(false);
     let show_menu = $state(false);
+    let mail_error = $state<string>();
 
     const on_audio_ready = async (path: string) => {
-        audio_path = convertFileSrc(decodeURIComponent(path));
-        meeting_state = 'record';
-        await transcribe.transcribe_from_path(path);
-        meeting_state = 'transcript';
+    audio_path = decodeURIComponent(path); 
+    const system_path = new URL(decodeURIComponent(path)).pathname; // users/..
+    meeting_state = 'record';
+    await transcribe.transcribe_from_path(system_path);
+    meeting_state = 'transcript';
     };
 
     const get_transcript_text = () =>
@@ -58,12 +61,16 @@
     };
 
     const open_mail = (body: string) => {
+        if (!settings.mail_client) {
+            mail_error = "Vous n'avez pas choisis de mail par défaut";
+            return;
+        }
         const urls = {
             mailto: `mailto:?subject=Compte rendu&body=${encodeURIComponent(body)}`,
             gmail: `https://mail.google.com/mail/?view=cm&body=${encodeURIComponent(body)}`,
             outlook: `https://outlook.office.com/mail/deeplink/compose?body=${encodeURIComponent(body)}`,
         };
-        open(urls[settings.mail_client])
+        open(urls[settings.mail_client]);
     };
 </script>
 
@@ -72,6 +79,7 @@
         {#if meeting_state}
             <div class="flex items-center gap-3">
                 <audio controls src={audio_path} class="h-10"></audio>
+                 <!-- <PlayerAudio src={audio_path}/> -->
             </div>
             <div class="flex items-center gap-4">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
@@ -83,8 +91,11 @@
                         class="btn ghost"
                         onclick={() => open_mail(generate.tabs[generate.current].result)}
                     >
-                       <PaperPlane --size="1.2rem"/>Envoyer
+                        <PaperPlane --size="1.2rem" />Envoyer
                     </button>
+                    {#if mail_error}
+                        <p class="text-red-400 text-sm">{mail_error}</p>
+                    {/if}
                 {/if}
             </div>
         {/if}
