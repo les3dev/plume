@@ -1,37 +1,21 @@
 <script lang="ts">
-    import { open } from "@tauri-apps/plugin-dialog"
-    import { readFile } from "@tauri-apps/plugin-fs"
     import DownloadIcon from "$lib/icons/DownloadIcon.svelte"
-	import { get_upload_context } from "./upload_context.svelte";
+	import { get_transcribe_context } from "../transcribe/transcribe_context.svelte";
+    import { open as open_file } from "@tauri-apps/plugin-dialog";
 
-    // let file_name = $state<string>()
+    type Props = { onFinish?: (path: string) => void }
+    let { onFinish }: Props = $props();
 
-    // const handleUpload = async () => {
-    //     const selected_file_path = await open({
-    //         multiple: false,
-    //         filters: [{ name: "Audio", extensions: ["mp3"] }]
-    //     })
-    //     if (!selected_file_path) {
-    //         return
-    //     }
-       
-    //     const audio_file_bytes = await readFile(selected_file_path)
-    //     file_name = selected_file_path.split('/').pop()
-    //     console.log('nom', file_name)
-    //     console.log("fichier recu", audio_file_bytes)   
-    // }
-    type Props = {
-        onFinish? : (path:string) => void
+    const transcribe = get_transcribe_context();
 
-    }
-    let { onFinish }: Props = $props()
-    const upload = get_upload_context()
+    const upload = async () => {
+        const path = await open_file({
+            multiple: false,
+            filters: [{ name: 'Audio', extensions: ['mp3', 'wav'] }],
+        });
+        if (path) onFinish?.(path);
+    };
 </script>
-    <button class="btn p-6! rounded-full!" onclick={
-        async () => {
-            const path = await upload.upload()
-            if(path) onFinish?.(path)
-        }
-    }>
-        <DownloadIcon /> {upload.file_name ?? "Upload file audio"}
-    </button>
+<button class="btn p-6! rounded-full!" onclick={upload}>
+    <DownloadIcon /> {transcribe.file_name ?? "Ajouter un fichier audio"}
+</button>

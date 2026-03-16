@@ -4,26 +4,13 @@ import {readFile} from '@tauri-apps/plugin-fs';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {fetch} from '@tauri-apps/plugin-http';
 
-class UploadContext {
+class TranscribeContext {
     file_name = $state<string>();
     audio_bytes = $state<Uint8Array>();
     transcript = $state<any>();
     error = $state<string>();
 
     constructor(private settings: ReturnType<typeof get_settings_context>) {}
-
-    upload = async () => {
-        const selected_file_path = await open({
-            multiple: false,
-            filters: [{name: 'Audio', extensions: ['mp3', 'wav']}],
-        });
-        if (!selected_file_path) {
-            return;
-        }
-        this.file_name = selected_file_path.split('/').pop();
-        this.audio_bytes = await readFile(selected_file_path);
-        return selected_file_path;
-    };
 
     private mix_down_to_mono = (): Uint8Array => {
         if (!this.audio_bytes) return new Uint8Array();
@@ -110,8 +97,8 @@ class UploadContext {
 }
 
 const key = Symbol();
-export const get_upload_context = () => getContext<UploadContext>(key);
-export const set_upload_context = () => {
+export const get_transcribe_context = () => getContext<TranscribeContext>(key);
+export const set_transcribe_context = () => {
     const settings = get_settings_context();
-    return setContext(key, new UploadContext(settings));
+    return setContext(key, new TranscribeContext(settings));
 };

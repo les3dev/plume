@@ -11,10 +11,10 @@
     let duration = $state(0);
 
     const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const secondes = Math.floor(time % 60);
-        const formattedSeconds = secondes < 10 ? `0${secondes}` : secondes;
-        return `${minutes}:${formattedSeconds}`;
+        const minuts = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+        return `${minuts}:${formattedSeconds}`;
     };
     const togglePlay = async () => {
         if (!audioElement) return;
@@ -23,7 +23,7 @@
             try {
                 await audioElement.play();
             } catch (err) {
-                console.error('Erreur de lecture iOS:', err);
+                console.error('Error de lecture iOS:', err);
             }
         } else {
             audioElement.pause();
