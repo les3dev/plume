@@ -41,5 +41,10 @@
         "resources": {
             "target/release/libAudioCapture.dylib": "libAudioCapture.dylib"
         }
+    },
+    "plugins": {
+        "shell": {
+            "open" : true
+        }
     }
 }

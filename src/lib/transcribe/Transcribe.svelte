@@ -1,9 +1,11 @@
 <script lang="ts">
     import { get_transcribe_context } from "$lib/transcribe/transcribe_context.svelte";
+    import { Duration } from "luxon";
 
     export type SpeechBlock = {
     speaker: number;
     text: string;
+    start: number;
     }
     type Props = {
         speech_block_ready?: (blocks: SpeechBlock[]) => void;
@@ -35,13 +37,17 @@
             if (last && last.speaker === word.speaker) {
                 last.text += ' ' + word.punctuated_word;
             } else {
-                speech_blocks.push({speaker: word.speaker, text: word.punctuated_word});
+                speech_blocks.push({speaker: word.speaker, text: word.punctuated_word, start: word.start});
             }
         }
         return speech_blocks;
     };
 
     const speech_block = $derived(get_speech_blocks());
+
+    const format_time = (second:number) => {
+        return Duration.fromMillis(second * 1000).toFormat('m:ss')
+    }
 </script>
 
 {#if transcribe.error}
@@ -51,7 +57,7 @@
         {#each speech_block as speech_b, index}
             <div class="border-b border-bg-1 py-4 last:border-0">
                 {#if index === 0 || speech_block[index - 1].speaker !== speech_b.speaker}
-                    <p class="mb-2 text-sm font-bold">Speaker {speech_b.speaker + 1}</p>
+                    <p class="mb-2 text-sm font-bold">Speaker {speech_b.speaker + 1} <span class="text-fg-2 text-xs">{format_time(speech_b.start)}</span></p>
                 {/if}
                 <p class="serif">{speech_b.text}</p>
             </div>

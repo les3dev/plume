@@ -2,14 +2,18 @@ mod audio;
 mod capture_state;
 mod commands;
 
-use tauri::Manager;
-use tauri_plugin_positioner::{WindowExt, Position};
+use crate::{
+    capture_state::CaptureState, commands::start_capture::start_capture,
+    commands::stop_capture::stop_capture,
+};
 use audio_capture::AudioCapture;
-use crate::{capture_state::CaptureState, commands::start_capture::start_capture, commands::stop_capture::stop_capture};
+use tauri::Manager;
+use tauri_plugin_positioner::{Position, WindowExt};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .manage(CaptureState::default())
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_http::init())

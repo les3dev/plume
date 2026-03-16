@@ -1,9 +1,8 @@
-
 /// Accumulates f32 samples from one source.
 /// Resamples to TARGET_RATE on demand via linear interpolation.
 #[derive(Default)]
 pub struct AudioBuffer {
-    samples: Vec<f32>,   // raw samples as received
+    samples: Vec<f32>, // raw samples as received
     sample_rate: u32,
     channels: u16,
 }
@@ -25,10 +24,7 @@ impl AudioBuffer {
             return vec![];
         }
         let ch = self.channels as usize;
-        let src_frames: Vec<Vec<f32>> = self.samples
-            .chunks_exact(ch)
-            .map(|c| c.to_vec())
-            .collect();
+        let src_frames: Vec<Vec<f32>> = self.samples.chunks_exact(ch).map(|c| c.to_vec()).collect();
 
         if self.sample_rate == target_rate {
             return src_frames;
@@ -42,9 +38,17 @@ impl AudioBuffer {
             let pos = i as f64 * ratio;
             let idx = pos as usize;
             let frac = (pos - idx as f64) as f32;
-            let a = src_frames.get(idx).cloned().unwrap_or_else(|| vec![0.0; ch]);
-            let b = src_frames.get(idx + 1).cloned().unwrap_or_else(|| vec![0.0; ch]);
-            let frame: Vec<f32> = a.iter().zip(b.iter())
+            let a = src_frames
+                .get(idx)
+                .cloned()
+                .unwrap_or_else(|| vec![0.0; ch]);
+            let b = src_frames
+                .get(idx + 1)
+                .cloned()
+                .unwrap_or_else(|| vec![0.0; ch]);
+            let frame: Vec<f32> = a
+                .iter()
+                .zip(b.iter())
                 .map(|(&x, &y)| x + frac * (y - x))
                 .collect();
             out.push(frame);

@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 
 fn main() {
     // 1. Point to where the Swift lib actually lives
@@ -14,7 +14,7 @@ fn main() {
 
         // 3. Tell Cargo to watch the SOURCE of the lib, not the copy destination
         println!("cargo:rerun-if-changed={}", dylib_path);
-        
+
         // 4. Tell Cargo to look in target/release for the library during linking
         println!("cargo:rustc-link-search=native=target/release");
     }

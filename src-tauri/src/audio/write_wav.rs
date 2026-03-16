@@ -20,14 +20,14 @@ pub fn write_wav(path: &PathBuf, frames: &[Vec<f32>], sample_rate: u32) -> std::
     f.write_all(b"WAVE")?;
     // fmt chunk — IEEE float
     f.write_all(b"fmt ")?;
-    f.write_all(&16u32.to_le_bytes())?;           // chunk size
-    f.write_all(&3u16.to_le_bytes())?;            // PCM float
+    f.write_all(&16u32.to_le_bytes())?; // chunk size
+    f.write_all(&3u16.to_le_bytes())?; // PCM float
     f.write_all(&channels.to_le_bytes())?;
     f.write_all(&sample_rate.to_le_bytes())?;
     f.write_all(&(sample_rate * channels as u32 * 4).to_le_bytes())?; // byte rate
-    f.write_all(&(channels * 4).to_le_bytes())?;  // block align
-    f.write_all(&32u16.to_le_bytes())?;           // bits per sample
-    // data chunk
+    f.write_all(&(channels * 4).to_le_bytes())?; // block align
+    f.write_all(&32u16.to_le_bytes())?; // bits per sample
+                                        // data chunk
     f.write_all(b"data")?;
     f.write_all(&(data_bytes as u32).to_le_bytes())?;
     for frame in frames {

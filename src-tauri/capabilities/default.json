@@ -1,33 +1,48 @@
 {
-    "$schema": "../gen/schemas/desktop-schema.json",
-    "identifier": "default",
-    "description": "Capability for the main window",
-    "windows": ["main"],
-    "permissions": [
-        "core:default",
-        "opener:default",
-        "mic-recorder:default",
-        "store:allow-load",
-        "store:allow-get",
-        "store:allow-set",
-        "store:allow-save",
-        "store:allow-delete",
-        "dialog:default",
-        "fs:default",
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "mic-recorder:default",
+    "store:allow-load",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-save",
+    "store:allow-delete",
+    "dialog:default",
+    "fs:default",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
         {
-            "identifier": "fs:allow-read-file",
-            "allow": [{"path": "$APPDATA/**"}]
-        },
+          "path": "$APPDATA/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
         {
-        "identifier": "fs:allow-write-file",
-        "allow": [{"path": "$APPDATA/**"}]
-        },
-        "http:default",
+          "path": "$APPDATA/**"
+        }
+      ]
+    },
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
         {
-            "identifier": "http:allow-fetch",
-            "allow": [{"url": "https://api.deepgram.com/**"}]
-        },
-        "positioner:default",
-        "positioner:allow-move-window"
-    ]
+          "url": "https://api.deepgram.com/**"
+        }
+      ]
+    },
+    "positioner:default",
+    "positioner:allow-move-window",
+    "shell:default"
+  ]
 }

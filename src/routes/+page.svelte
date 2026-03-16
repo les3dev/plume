@@ -8,7 +8,7 @@
     import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
     import Transcript from '$lib/transcribe/Transcribe.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
-    import {writeFile} from '@tauri-apps/plugin-fs';
+    import { writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
     import {convertFileSrc} from '@tauri-apps/api/core';
     import {get_generate_context} from '$lib/generate/generate_context.svelte';
@@ -16,6 +16,8 @@
     import type {SpeechBlock} from '$lib/transcribe/Transcribe.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import Popover from '$lib/widgets/Popover.svelte';
+    import { open } from '@tauri-apps/plugin-shell';
+    import PaperPlane from '$lib/icons/PaperPlane.svelte';
 
     const settings = get_settings_context();
     const generate = get_generate_context();
@@ -54,6 +56,15 @@
         const encoder = new TextEncoder();
         await writeFile(path, encoder.encode(get_transcript_text()));
     };
+
+    const open_mail = (body: string) => {
+        const urls = {
+            mailto: `mailto:?subject=Compte rendu&body=${encodeURIComponent(body)}`,
+            gmail: `https://mail.google.com/mail/?view=cm&body=${encodeURIComponent(body)}`,
+            outlook: `https://outlook.office.com/mail/deeplink/compose?body=${encodeURIComponent(body)}`,
+        };
+        open(urls[settings.mail_client])
+    };
 </script>
 
 <div class="flex h-screen flex-col">
@@ -67,6 +78,14 @@
                 <button class="btn ghost" onclick={download}
                     ><DownloadIcon --size="1.2rem" />Télécharger</button
                 >
+                {#if generate.tabs[generate.current]?.title === 'Email' && generate.tabs[generate.current]?.result && settings.mail_client}
+                    <button
+                        class="btn ghost"
+                        onclick={() => open_mail(generate.tabs[generate.current].result)}
+                    >
+                       <PaperPlane --size="1.2rem"/>Envoyer
+                    </button>
+                {/if}
             </div>
         {/if}
 

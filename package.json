@@ -27,6 +27,7 @@
     "@tauri-apps/plugin-http": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-positioner": "^2.3.1",
+    "@tauri-apps/plugin-shell": "~2.3.5",
     "@tauri-apps/plugin-store": "~2.4.2",
     "@types/luxon": "^3.7.1",
     "ai": "^6.0.116",

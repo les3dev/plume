@@ -1,7 +1,7 @@
+use crate::audio::write_wav::write_wav;
+use crate::capture_state::{CaptureState, TARGET_RATE};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
-use crate::capture_state::{CaptureState, TARGET_RATE};
-use crate::audio::write_wav::write_wav;
 
 #[tauri::command]
 pub fn stop_capture(state: State<CaptureState>, app: AppHandle) -> Result<PathBuf, String> {
@@ -26,13 +26,19 @@ pub fn stop_capture(state: State<CaptureState>, app: AppHandle) -> Result<PathBu
     let mic_ch = mic_frames.get(0).map_or(0, |f| f.len());
 
     let total_frames = sys_frames.len().max(mic_frames.len());
-    let combined: Vec<Vec<f32>> = (0..total_frames).map(|i| {
-        let s = sys_frames.get(i).cloned().unwrap_or(vec![0.0; sys_ch]);
-        let m = mic_frames.get(i).cloned().unwrap_or(vec![0.0; mic_ch]);
-        s.into_iter().chain(m).collect()
-    }).collect();
+    let combined: Vec<Vec<f32>> = (0..total_frames)
+        .map(|i| {
+            let s = sys_frames.get(i).cloned().unwrap_or(vec![0.0; sys_ch]);
+            let m = mic_frames.get(i).cloned().unwrap_or(vec![0.0; mic_ch]);
+            s.into_iter().chain(m).collect()
+        })
+        .collect();
 
-    let path = app.path().app_data_dir().map_err(|e| e.to_string())?.join("capture.wav");
+    let path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("capture.wav");
     std::fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
     write_wav(&path, &combined, TARGET_RATE).map_err(|e| e.to_string())?;
 
