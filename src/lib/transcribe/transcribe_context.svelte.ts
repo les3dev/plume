@@ -64,10 +64,9 @@ class TranscribeContext {
 
         const params = new URLSearchParams({
             model: 'nova-3',
-            detect_language: 'true',
-            punctuate: 'true',
-            utterances: 'true',
-            diarize: 'true', // works correctly on mono
+            smart_format: 'true',
+            language: 'multi',
+            diarize: 'true',
         });
 
         try {
