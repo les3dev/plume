@@ -15,4 +15,4 @@ pub struct CaptureState {
     pub mic_buf: Arc<Mutex<AudioBuffer>>,
 }
 
-pub const TARGET_RATE: u32 = 48_000;
+pub const TARGET_RATE: u32 = 16_000;
