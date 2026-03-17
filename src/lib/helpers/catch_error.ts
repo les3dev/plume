@@ -28,7 +28,7 @@ export function catch_error<T>(promise: () => Promise<T>): Promise<T | Error>;
 export function catch_error<T>(fn: () => T): T | Error;
 export function catch_error(input: unknown): unknown {
     try {
-        if (typeof input === "function") {
+        if (typeof input === 'function') {
             const result = (input as () => unknown)();
 
             if (result instanceof Promise) {
@@ -53,13 +53,18 @@ function error_with_fallback(err: unknown): Error {
         // is already and error
         return err;
     }
-    if (err !== null && typeof err === "object" && "message" in err && typeof err.message === "string") {
+    if (
+        err !== null &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof err.message === 'string'
+    ) {
         // is an object that looks like an error but doesnt extends Error
         return new Error(err.message);
     }
-    if (typeof err === "string") {
+    if (typeof err === 'string') {
         // is directly a string
-        return new Error(err.startsWith("Error: ") ? err.slice("Error: ".length) : err);
+        return new Error(err.startsWith('Error: ') ? err.slice('Error: '.length) : err);
     }
     // final fallback with explicit message
     return new Error(`Thrown value of type ${typeof err} that doesn't extends Error: ${err}`);

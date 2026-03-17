@@ -1,4 +1,4 @@
-import {load, type Store} from "@tauri-apps/plugin-store";
+import {load, type Store} from '@tauri-apps/plugin-store';
 
 /**
  * Abstract class to augment svelte context with tauri store.

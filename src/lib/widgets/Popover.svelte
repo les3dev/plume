@@ -1,15 +1,21 @@
 <script lang="ts">
-    import type {Snippet} from "svelte";
+    import type {Snippet} from 'svelte';
 
     type Props = {
         is_open: boolean;
         target: Snippet;
         offset_y?: number;
-        anchor?: "start" | "center" | "end";
+        anchor?: 'start' | 'center' | 'end';
         children: Snippet;
     };
 
-    let {is_open = $bindable(), target, children, offset_y = 0, anchor = "center"}: Props = $props();
+    let {
+        is_open = $bindable(),
+        target,
+        children,
+        offset_y = 0,
+        anchor = 'center',
+    }: Props = $props();
     let cardElement: HTMLDivElement;
     let el: HTMLDivElement;
     let position = $state({x: 0, y: 0});
@@ -22,7 +28,7 @@
         }
     };
     const closeOnEsc = (event: KeyboardEvent) => {
-        if (event.key === "Escape") {
+        if (event.key === 'Escape') {
             if (is_open) {
                 event.preventDefault();
             }
@@ -36,15 +42,18 @@
         const margin = 16;
         // horizontal anchor: 'start' | 'center' | 'end'
         let expectedX: number;
-        if (anchor === "start") {
+        if (anchor === 'start') {
             expectedX = targetBounds.left;
-        } else if (anchor === "end") {
+        } else if (anchor === 'end') {
             expectedX = targetBounds.right - childrenBounds.width;
         } else {
             expectedX = targetBounds.left + (targetBounds.width - childrenBounds.width) / 2;
         }
         // clamp to viewport with a safe margin
-        expectedX = Math.max(margin, Math.min(expectedX, window.innerWidth - childrenBounds.width - margin));
+        expectedX = Math.max(
+            margin,
+            Math.min(expectedX, window.innerWidth - childrenBounds.width - margin),
+        );
 
         const spaceBelow = window.innerHeight - targetBounds.bottom;
         const expectedY =

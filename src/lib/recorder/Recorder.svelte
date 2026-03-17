@@ -1,15 +1,15 @@
 <script lang="ts">
-    import {startRecording, stopRecording} from "tauri-plugin-mic-recorder-api";
-    import {convertFileSrc} from "@tauri-apps/api/core";
-    import {catch_error} from "$lib/helpers/catch_error";
-	import PlayIcon from "$lib/icons/PlayIcon.svelte";
-	import PauseIcon from "$lib/icons/PauseIcon.svelte";
+    import {startRecording, stopRecording} from 'tauri-plugin-mic-recorder-api';
+    import {convertFileSrc} from '@tauri-apps/api/core';
+    import {catch_error} from '$lib/helpers/catch_error';
+    import PlayIcon from '$lib/icons/PlayIcon.svelte';
+    import PauseIcon from '$lib/icons/PauseIcon.svelte';
 
     type Props = {
-        hidden?: boolean,
-        audio_ready?: (path:string) => void
-    } 
-    let {audio_ready, hidden = false} : Props = $props()
+        hidden?: boolean;
+        audio_ready?: (path: string) => void;
+    };
+    let {audio_ready, hidden = false}: Props = $props();
 
     let is_recording = $state(false);
     let error_message = $state<string>();
@@ -18,7 +18,7 @@
     const toggle_recording = async () => {
         if (is_recording) {
             const audio_path = await catch_error(() => stopRecording());
-            console.log("audio_path", audio_path)
+            console.log('audio_path', audio_path);
             is_recording = false;
             if (audio_path instanceof Error) {
                 error_message = error_message;
@@ -30,7 +30,7 @@
                 return;
             }
             current_path = asset_path;
-            audio_ready?.(audio_path)  
+            audio_ready?.(audio_path);
         } else {
             const error = await catch_error(async () => startRecording());
             if (error instanceof Error) {
@@ -41,13 +41,14 @@
         }
     };
 </script>
+
 {#if !hidden}
-    <div class="p-8 rounded-2xl">
-        <button class="btn py-8! rounded-full!" onclick={toggle_recording}>
+    <div class="rounded-2xl p-8">
+        <button class="btn rounded-full! py-8!" onclick={toggle_recording}>
             {#if is_recording}
-            <PauseIcon/>  Stop recording 
+                <PauseIcon /> Stop recording
             {:else}
-            <PlayIcon/>  Start recording 
+                <PlayIcon /> Start recording
             {/if}
         </button>
         {#if error_message !== undefined}

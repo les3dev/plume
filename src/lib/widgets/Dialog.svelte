@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type {Snippet} from "svelte";
-    import type {HTMLDialogAttributes} from "svelte/elements";
+    import type {Snippet} from 'svelte';
+    import type {HTMLDialogAttributes} from 'svelte/elements';
 
     interface Props extends HTMLDialogAttributes {
         is_open: boolean;
@@ -10,15 +10,15 @@
          * Disable click outside the modal or cancel to close.
          */
         disable_cancel?: boolean;
-        type?: "card" | "fullscreen";
+        type?: 'card' | 'fullscreen';
         /**
          * The position of the dialog.
          */
-        position?: "top" | "right" | "bottom" | "left" | "center";
+        position?: 'top' | 'right' | 'bottom' | 'left' | 'center';
         /**
          * The animation to use when opening the dialog.
          */
-        animation?: "top" | "right" | "bottom" | "left" | "fade";
+        animation?: 'top' | 'right' | 'bottom' | 'left' | 'fade';
         /**
          * Called when the dialog should be closed (when clicking outside or pressing escape).
          */
@@ -30,9 +30,9 @@
     }
     let {
         is_open,
-        animation = "bottom",
-        type = "card",
-        position = "center",
+        animation = 'bottom',
+        type = 'card',
+        position = 'center',
         onrequestclose,
         onclosed,
         children,
@@ -44,24 +44,24 @@
 
     const animations = {
         top: {
-            in: "dialog-top-in",
-            out: "dialog-top-out",
+            in: 'dialog-top-in',
+            out: 'dialog-top-out',
         },
         right: {
-            in: "dialog-right-in",
-            out: "dialog-right-out",
+            in: 'dialog-right-in',
+            out: 'dialog-right-out',
         },
         bottom: {
-            in: "dialog-bottom-in",
-            out: "dialog-bottom-out",
+            in: 'dialog-bottom-in',
+            out: 'dialog-bottom-out',
         },
         left: {
-            in: "dialog-left-in",
-            out: "dialog-left-out",
+            in: 'dialog-left-in',
+            out: 'dialog-left-out',
         },
         fade: {
-            in: "dialog-fade-in",
-            out: "dialog-fade-out",
+            in: 'dialog-fade-in',
+            out: 'dialog-fade-out',
         },
     };
 
@@ -89,7 +89,7 @@
 
     const handleClick = (event: MouseEvent) => {
         // check if the click target is within a different dialog element
-        const targetDialog = (event.target as HTMLElement)?.closest("dialog");
+        const targetDialog = (event.target as HTMLElement)?.closest('dialog');
         if (targetDialog && targetDialog !== dialog) {
             // click is inside a nested dialog, ignore it
             return;
@@ -101,7 +101,9 @@
             event.clientY <= rect.bottom &&
             event.clientX >= rect.left &&
             event.clientX <= rect.right;
-        const isTargetInsideDialog = event.target ? dialog.contains(event.target as HTMLElement) : true;
+        const isTargetInsideDialog = event.target
+            ? dialog.contains(event.target as HTMLElement)
+            : true;
 
         // check clientY and clientX !== 0 for Firefox bug when clicking in an option inside a dialog
         if ((event.clientY !== 0 && event.clientX !== 0 && !isInDialog) || !isTargetInsideDialog) {
@@ -118,16 +120,16 @@
     });
 
     $effect(() => {
-        const currentValue = document.documentElement.getAttribute("data-scroll");
+        const currentValue = document.documentElement.getAttribute('data-scroll');
         const resetValue = () => {
             if (currentValue === null) {
-                document.documentElement.removeAttribute("data-scroll");
+                document.documentElement.removeAttribute('data-scroll');
             } else {
-                document.documentElement.setAttribute("data-scroll", currentValue);
+                document.documentElement.setAttribute('data-scroll', currentValue);
             }
         };
         if (is_open && disableBodyScrolling) {
-            document.documentElement.setAttribute("data-scroll", "false");
+            document.documentElement.setAttribute('data-scroll', 'false');
         } else if (!is_open && disableBodyScrolling) {
             resetValue();
         }
@@ -139,7 +141,7 @@
 <dialog
     bind:this={dialog}
     class:closing={!is_open}
-    class:fullscreen={type === "fullscreen"}
+    class:fullscreen={type === 'fullscreen'}
     onclose={handleClose}
     onclick={handleClick}
     onanimationend={handleAnimationEnd}
@@ -253,8 +255,8 @@
     }
 
     dialog {
-        --animation-in: "dialog-bottom-in";
-        --animation-out: "dialog-bottom-out";
+        --animation-in: 'dialog-bottom-in';
+        --animation-out: 'dialog-bottom-out';
         color: var(--color-fg);
         border: none;
         overflow: auto;

@@ -76,15 +76,16 @@
         </div>
     </div>
     <div class="flex flex-col gap-3">
-      <label class="text-sm font-medium" for="mail">Mail par défaut</label>
-      <select
-          id="mail"
-          class="cursor-pointer"
-          value={settings.mail_client}
-          onchange={(e) => settings.save_mail_client(e.currentTarget.value as MailClient)}>
-          <option value="mailto">Choisir</option>
-          <option value="gmail">Gmail</option>
-          <option value="outlook">Outlook</option>
-      </select>
-  </div>
+        <label class="text-sm font-medium" for="mail">Mail par défaut</label>
+        <select
+            id="mail"
+            class="cursor-pointer"
+            value={settings.mail_client}
+            onchange={(e) => settings.save_mail_client(e.currentTarget.value as MailClient)}
+        >
+            <option value="mailto">Choisir</option>
+            <option value="gmail">Gmail</option>
+            <option value="outlook">Outlook</option>
+        </select>
+    </div>
 </div>

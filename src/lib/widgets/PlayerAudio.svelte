@@ -44,12 +44,13 @@
     };
     let progress = $derived(duration > 0 ? (current_time / duration) * 100 : 0);
 </script>
+
 <audio
     bind:this={audio_element}
     {src}
-    ontimeupdate={() => current_time = audio_element?.currentTime ?? 0}
-    onloadedmetadata={() => duration = audio_element?.duration ?? 0}
-    onended={() => is_playing = false}
+    ontimeupdate={() => (current_time = audio_element?.currentTime ?? 0)}
+    onloadedmetadata={() => (duration = audio_element?.duration ?? 0)}
+    onended={() => (is_playing = false)}
 >
 </audio>
 <div class="flex items-center gap-3">
@@ -74,10 +75,7 @@
                 class="absolute z-20 w-full cursor-pointer opacity-0"
                 style="height: 44px; top: 50%; transform: translateY(-50%)"
             />
-            <div
-                class="absolute h-full rounded-lg bg-primary"
-                style="width: {progress}%"
-            ></div>
+            <div class="absolute h-full rounded-lg bg-primary" style="width: {progress}%"></div>
             <div
                 class="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary"
                 style="left: {progress}%"

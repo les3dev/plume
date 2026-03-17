@@ -1,48 +1,46 @@
 {
-  "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "default",
-  "description": "Capability for the main window",
-  "windows": [
-    "main"
-  ],
-  "permissions": [
-    "core:default",
-    "opener:default",
-    "mic-recorder:default",
-    "store:allow-load",
-    "store:allow-get",
-    "store:allow-set",
-    "store:allow-save",
-    "store:allow-delete",
-    "dialog:default",
-    "fs:default",
-    {
-      "identifier": "fs:allow-read-file",
-      "allow": [
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "identifier": "default",
+    "description": "Capability for the main window",
+    "windows": ["main"],
+    "permissions": [
+        "core:default",
+        "opener:default",
+        "mic-recorder:default",
+        "store:allow-load",
+        "store:allow-get",
+        "store:allow-set",
+        "store:allow-save",
+        "store:allow-delete",
+        "dialog:default",
+        "fs:default",
         {
-          "path": "$APPDATA/**"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-write-file",
-      "allow": [
+            "identifier": "fs:allow-read-file",
+            "allow": [
+                {
+                    "path": "$APPDATA/**"
+                }
+            ]
+        },
         {
-          "path": "$APPDATA/**"
-        }
-      ]
-    },
-    "http:default",
-    {
-      "identifier": "http:allow-fetch",
-      "allow": [
+            "identifier": "fs:allow-write-file",
+            "allow": [
+                {
+                    "path": "$APPDATA/**"
+                }
+            ]
+        },
+        "http:default",
         {
-          "url": "https://api.deepgram.com/**"
-        }
-      ]
-    },
-    "positioner:default",
-    "positioner:allow-move-window",
-    "shell:default"
-  ]
+            "identifier": "http:allow-fetch",
+            "allow": [
+                {
+                    "url": "https://api.deepgram.com/**"
+                }
+            ]
+        },
+        "positioner:default",
+        "positioner:allow-move-window",
+        "shell:default"
+    ]
 }

@@ -44,7 +44,7 @@
     },
     "plugins": {
         "shell": {
-            "open" : true
+            "open": true
         }
     }
 }

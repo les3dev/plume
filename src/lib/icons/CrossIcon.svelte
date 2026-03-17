@@ -22,6 +22,5 @@
         width: var(--size);
         height: var(--size);
         transform: rotate(var(--rotate, 0deg));
-
     }
 </style>
