@@ -1,5 +1,4 @@
 <script lang="ts">
-    import SettingsQuery from '$lib/scripts/SettingsQuery.svelte';
     import Dialog from '$lib/widgets/Dialog.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
     import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
@@ -18,6 +17,7 @@
     import Popover from '$lib/widgets/Popover.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlane from '$lib/icons/PaperPlane.svelte';
+    import Settings from '$lib/settings/Settings.svelte';
 
     const settings = get_settings_context();
     const generate = get_generate_context();
@@ -215,5 +215,5 @@
 </div>
 
 <Dialog {is_open} onrequestclose={() => (is_open = false)} position="center">
-    <SettingsQuery onclose={() => (is_open = false)} />
+    <Settings onclose={() => (is_open = false)} />
 </Dialog>

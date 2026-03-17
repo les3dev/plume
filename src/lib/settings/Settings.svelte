@@ -33,13 +33,12 @@
             bind:value={openrouter_key}
         />
         <div class="flex gap-3">
-            <button
-                class="btn max-w-20! grow"
-                onclick={() => settings.save_openrouter_key(openrouter_key)}>Sauvegarder</button
+            <button class="btn" onclick={() => settings.save_openrouter_key(openrouter_key)}
+                >Sauvegarder</button
             >
             {#if settings.openrouter_key}
                 <button
-                    class="btn error max-w-20! grow"
+                    class="btn error"
                     onclick={() => {
                         settings.save_openrouter_key(undefined);
                     }}>Effacer</button
@@ -57,13 +56,12 @@
             bind:value={deepgram_key}
         />
         <div class="flex gap-3">
-            <button
-                class="btn max-w-20 grow"
-                onclick={() => settings.save_deepgram_key(deepgram_key)}>Sauvegarder</button
+            <button class="btn" onclick={() => settings.save_deepgram_key(deepgram_key)}
+                >Sauvegarder</button
             >
             {#if settings.deepgram_key}
                 <button
-                    class="btn error max-w-20 grow"
+                    class="btn error"
                     onclick={() => {
                         settings.save_deepgram_key(undefined);
                     }}>Effacer</button
