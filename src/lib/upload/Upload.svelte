@@ -11,7 +11,7 @@
     const upload = async () => {
         const path = await open_file({
             multiple: false,
-            filters: [{name: 'Audio', extensions: ['mp3', 'wav']}],
+            filters: [{name: 'Audio', extensions: ['mp3', 'wav', 'ogg']}],
         });
         if (path) onFinish?.(path);
     };
