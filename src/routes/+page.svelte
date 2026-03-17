@@ -31,12 +31,20 @@
     let mail_error = $state<string>();
 
     const on_audio_ready = async (path: string) => {
-    audio_path = decodeURIComponent(path); 
-    const system_path = decodeURIComponent(new URL(decodeURIComponent(path)).pathname); // users/..
-    meeting_state = 'record';
-    await transcribe.transcribe_from_path(system_path);
-    meeting_state = 'transcript';
-    };
+    // recorder
+    if (path.startsWith('asset://')) {
+        audio_path = decodeURIComponent(path);
+        const system_path = decodeURIComponent(new URL(path).pathname)
+        meeting_state = 'record'
+        await transcribe.transcribe_from_path(system_path)
+    } else {
+        // upload
+        audio_path = convertFileSrc(path)
+        meeting_state = 'record'
+        await transcribe.transcribe_from_path(path)
+    }
+    meeting_state = 'transcript'
+};
 
     const get_transcript_text = () =>
         speech_block
@@ -82,13 +90,11 @@
             </div>
             <div class="flex items-center gap-4">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                <button class="btn ghost" onclick={download}
-                    ><DownloadIcon --size="1.2rem" />Télécharger</button
-                >
-                {#if generate.tabs[generate.current]?.title === 'Email' && generate.tabs[generate.current]?.result && settings.mail_client}
-                    <button
+                <button class="btn ghost" onclick={download}><DownloadIcon --size="1.2rem" />Télécharger</button>
+                {#if generate.current !== undefined && generate.tabs[generate.current]?.title === 'Email' && generate.result[generate.current] && settings.mail_client}
+                <button
                         class="btn ghost"
-                        onclick={() => open_mail(generate.tabs[generate.current].result)}
+                        onclick={() => open_mail(generate.result[generate.current])}
                     >
                         <PaperPlane --size="1.2rem" />Envoyer
                     </button>
@@ -99,7 +105,7 @@
             </div>
         {/if}
 
-        <button class="btn ghost icon items-end justify-end" onclick={() => (is_open = true)}>
+        <button class="btn ghost icon ms-auto" onclick={() => (is_open = true)}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </div>
@@ -142,10 +148,10 @@
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
                         {#each generate.tabs as tab, i}
                             {#if i === generate.current}
-                                {#if tab.loading}
+                                {#if generate.loading}
                                     <p class="text-fg-2">{tab.title} en cours...</p>
                                 {:else}
-                                    {tab.result}
+                                    {generate.result[i]}
                                 {/if}
                             {/if}
                         {/each}
@@ -170,7 +176,7 @@
                                 : ''}"
                             onclick={() => {
                                 meeting_state = 'edit';
-                                generate.current = index;
+                                generate.open_tab(index, get_transcript_text())
                             }}
                         >
                             {generate.tabs[index].title}
