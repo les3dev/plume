@@ -46,13 +46,14 @@
         meeting_state = 'transcript';
     };
 
-    const get_transcript_text = () =>
-        speech_block
-            .map((segment) => `Speaker ${segment.speaker + 1}: ${segment.text}`)
+    $effect(() => {
+        generate.transcript = speech_block
+            .map((s) => `Speaker ${s.speaker + 1}: ${s.text}`)
             .join('\n\n');
+    });
 
     const copy = async () => {
-        await navigator.clipboard.writeText(get_transcript_text());
+        await navigator.clipboard.writeText(generate.transcript ?? "");
     };
 
     const download = async () => {
@@ -64,7 +65,7 @@
         if (!path) return;
 
         const encoder = new TextEncoder();
-        await writeFile(path, encoder.encode(get_transcript_text()));
+        await writeFile(path, encoder.encode(generate.transcript ?? ""));
     };
 
     const open_mail = (body: string) => {
@@ -166,52 +167,43 @@
         <div class="shrink-0 border-bg-2 p-4">
             <div class="flex items-center justify-center gap-4">
                 <button
-                    class="btn ghost {meeting_state === 'transcript' ? 'secondary' : ''}"
+                    class="btn {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
                     onclick={() => (meeting_state = 'transcript')}
                 >
                     Transcription
                 </button>
-                {#each generate.opened_tabs as index}
-                    <button
-                        class="btn ghost {meeting_state === 'edit' && generate.current === index
-                            ? 'secondary'
-                            : ''}"
-                        onclick={() => {
-                            meeting_state = 'edit';
-                            generate.open_tab(index, get_transcript_text());
-                        }}
-                    >
-                        {generate.tabs[index].title}
-                    </button>
+                {#each generate.tabs as tab, i}
+                    {#if generate.current === i && meeting_state === 'edit'}
+                        <button class="btn secondary">
+                            {tab.title}
+                        </button>
+                    {/if}
                 {/each}
-                {#if generate.available_tabs.length > 0}
-                    <Popover bind:is_open={show_menu} offset_y={10}>
-                        {#snippet target()}
-                            <button class="btn ghost" onclick={() => (show_menu = true)}
-                                ><CrossIcon rotate={45} --size="1.2rem" /></button
-                            >
-                        {/snippet}
-
-                        {#each generate.available_tabs as tab}
-                            <button
-                                class="btn ghost"
-                                onclick={() => {
-                                    meeting_state = 'edit';
-                                    generate.open_tab(
-                                        generate.tabs.indexOf(tab),
-                                        get_transcript_text(),
-                                    );
-                                    show_menu = false;
-                                }}
-                            >
-                                {tab.title}
-                            </button>
-                        {/each}
-                    </Popover>
-                {/if}
+                <button class="btn ghost" onclick={() => (show_menu = true)}>
+                    <CrossIcon rotate={45} --size="1.2rem" />
+                </button>
             </div>
         </div>
     {/if}
+
+    <Dialog is_open={show_menu} onrequestclose={() => (show_menu = false)} position="bottom">
+        <div class="flex flex-col gap-2">
+            {#each generate.tabs as tab, i}
+                <button
+                    class="btn {generate.current === i && meeting_state === 'edit'
+                        ? 'secondary'
+                        : 'ghost'}"
+                    onclick={() => {
+                        meeting_state = 'edit';
+                        generate.generate(i);
+                        show_menu = false;
+                    }}
+                >
+                    {tab.title}
+                </button>
+            {/each}
+        </div>
+    </Dialog>
 </div>
 
 <Dialog {is_open} onrequestclose={() => (is_open = false)} position="center">
