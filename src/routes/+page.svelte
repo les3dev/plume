@@ -31,20 +31,20 @@
     let mail_error = $state<string>();
 
     const on_audio_ready = async (path: string) => {
-    // recorder
-    if (path.startsWith('asset://')) {
-        audio_path = decodeURIComponent(path);
-        const system_path = decodeURIComponent(new URL(path).pathname)
-        meeting_state = 'record'
-        await transcribe.transcribe_from_path(system_path)
-    } else {
-        // upload
-        audio_path = convertFileSrc(path)
-        meeting_state = 'record'
-        await transcribe.transcribe_from_path(path)
-    }
-    meeting_state = 'transcript'
-};
+        // recorder
+        if (path.startsWith('asset://')) {
+            audio_path = decodeURIComponent(path);
+            const system_path = decodeURIComponent(new URL(path).pathname);
+            meeting_state = 'record';
+            await transcribe.transcribe_from_path(system_path);
+        } else {
+            // upload
+            audio_path = convertFileSrc(path);
+            meeting_state = 'record';
+            await transcribe.transcribe_from_path(path);
+        }
+        meeting_state = 'transcript';
+    };
 
     const get_transcript_text = () =>
         speech_block
@@ -86,13 +86,15 @@
         {#if meeting_state}
             <div class="flex items-center gap-3">
                 <audio controls src={audio_path} class="h-10"></audio>
-                 <!-- <PlayerAudio src={audio_path}/> -->
+                <!-- <PlayerAudio src={audio_path}/> -->
             </div>
             <div class="flex items-center gap-4">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                <button class="btn ghost" onclick={download}><DownloadIcon --size="1.2rem" />Télécharger</button>
+                <button class="btn ghost" onclick={download}
+                    ><DownloadIcon --size="1.2rem" />Télécharger</button
+                >
                 {#if generate.current !== undefined && generate.tabs[generate.current]?.title === 'Email' && generate.result[generate.current] && settings.mail_client}
-                <button
+                    <button
                         class="btn ghost"
                         onclick={() => open_mail(generate.result[generate.current])}
                     >
@@ -159,58 +161,57 @@
                 </div>
             </div>
         {/if}
-
-        {#if meeting_state === 'transcript' || meeting_state === 'edit'}
-            <div class="shrink-0 border-bg-2 p-4">
-                <div class="flex items-center justify-center gap-4">
-                    <button
-                        class="btn ghost {meeting_state === 'transcript' ? 'secondary' : ''}"
-                        onclick={() => (meeting_state = 'transcript')}
-                    >
-                        Transcription
-                    </button>
-                    {#each generate.opened_tabs as index}
-                        <button
-                            class="btn ghost {meeting_state === 'edit' && generate.current === index
-                                ? 'secondary'
-                                : ''}"
-                            onclick={() => {
-                                meeting_state = 'edit';
-                                generate.open_tab(index, get_transcript_text())
-                            }}
-                        >
-                            {generate.tabs[index].title}
-                        </button>
-                    {/each}
-                    {#if generate.available_tabs.length > 0}
-                        <Popover bind:is_open={show_menu} offset_y={10}>
-                            {#snippet target()}
-                                <button class="btn ghost" onclick={() => (show_menu = true)}
-                                    ><CrossIcon rotate={45} --size="1.2rem" /></button
-                                >
-                            {/snippet}
-
-                            {#each generate.available_tabs as tab}
-                                <button
-                                    class="btn ghost"
-                                    onclick={() => {
-                                        meeting_state = 'edit';
-                                        generate.open_tab(
-                                            generate.tabs.indexOf(tab),
-                                            get_transcript_text(),
-                                        );
-                                        show_menu = false;
-                                    }}
-                                >
-                                    {tab.title}
-                                </button>
-                            {/each}
-                        </Popover>
-                    {/if}
-                </div>
-            </div>
-        {/if}
     </div>
+    {#if meeting_state === 'transcript' || meeting_state === 'edit'}
+        <div class="shrink-0 border-bg-2 p-4">
+            <div class="flex items-center justify-center gap-4">
+                <button
+                    class="btn ghost {meeting_state === 'transcript' ? 'secondary' : ''}"
+                    onclick={() => (meeting_state = 'transcript')}
+                >
+                    Transcription
+                </button>
+                {#each generate.opened_tabs as index}
+                    <button
+                        class="btn ghost {meeting_state === 'edit' && generate.current === index
+                            ? 'secondary'
+                            : ''}"
+                        onclick={() => {
+                            meeting_state = 'edit';
+                            generate.open_tab(index, get_transcript_text());
+                        }}
+                    >
+                        {generate.tabs[index].title}
+                    </button>
+                {/each}
+                {#if generate.available_tabs.length > 0}
+                    <Popover bind:is_open={show_menu} offset_y={10}>
+                        {#snippet target()}
+                            <button class="btn ghost" onclick={() => (show_menu = true)}
+                                ><CrossIcon rotate={45} --size="1.2rem" /></button
+                            >
+                        {/snippet}
+
+                        {#each generate.available_tabs as tab}
+                            <button
+                                class="btn ghost"
+                                onclick={() => {
+                                    meeting_state = 'edit';
+                                    generate.open_tab(
+                                        generate.tabs.indexOf(tab),
+                                        get_transcript_text(),
+                                    );
+                                    show_menu = false;
+                                }}
+                            >
+                                {tab.title}
+                            </button>
+                        {/each}
+                    </Popover>
+                {/if}
+            </div>
+        </div>
+    {/if}
 </div>
 
 <Dialog {is_open} onrequestclose={() => (is_open = false)} position="center">
