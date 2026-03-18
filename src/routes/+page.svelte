@@ -10,17 +10,18 @@
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
     import {convertFileSrc} from '@tauri-apps/api/core';
-    import {get_generate_context} from '$lib/generate/generate_context.svelte';
     import {get_transcribe_context} from '$lib/transcribe/transcribe_context.svelte';
+    import {generate_summary} from '$lib/openrouter/openrouter';
     import type {SpeechBlock} from '$lib/transcribe/Transcribe.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import {open} from '@tauri-apps/plugin-shell';
-    import PaperPlane from '$lib/icons/PaperPlane.svelte';
+    import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
     import Settings from '$lib/settings/Settings.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
+    import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
 
     const settings = get_settings_context();
-    const generate = get_generate_context();
+    const prompts_ctx = get_prompt_context();
     const transcribe = get_transcribe_context();
 
     let speech_block = $state<SpeechBlock[]>([]);
@@ -29,18 +30,35 @@
     let is_settings_open = $state(false);
     let is_prompts_open = $state(false);
     let mail_error = $state<string>();
-    let current_id = $state<string>();
-    let tabs = $derived(generate.prompts.filter((p) => p.id in generate.result));
+    let tabs = $state<{id: string; result: string}[]>([]);
+    let current_tab = $state(0);
+    let loading = $state(false);
+    let transcript = $derived(
+        speech_block.map((speach) => `Speaker ${speach.speaker + 1}: ${speach.text}`).join('\n\n'),
+    );
 
+    $inspect(tabs, settings.mail_client);
+
+    const generate = async (prompt: Prompt) => {
+        if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript) return;
+        loading = true;
+        meeting_state = 'ai_result';
+        tabs.push({id: prompt.id, result: ''});
+        current_tab = tabs.length - 1;
+        const result = await generate_summary(
+            `${prompt.prompt} ${transcript}`,
+            settings.openrouter_key,
+        );
+        tabs[current_tab].result = result;
+        loading = false;
+    };
     const on_audio_ready = async (path: string) => {
-        // recorder
         if (path.startsWith('asset://')) {
             audio_path = decodeURIComponent(path);
             const system_path = decodeURIComponent(new URL(path).pathname);
             meeting_state = 'record';
             await transcribe.transcribe_from_path(system_path);
         } else {
-            // upload
             audio_path = convertFileSrc(path);
             meeting_state = 'record';
             await transcribe.transcribe_from_path(path);
@@ -48,14 +66,8 @@
         meeting_state = 'transcript';
     };
 
-    $effect(() => {
-        generate.transcript = speech_block
-            .map((s) => `Speaker ${s.speaker + 1}: ${s.text}`)
-            .join('\n\n');
-    });
-
     const copy = async () => {
-        await navigator.clipboard.writeText(generate.transcript ?? '');
+        await navigator.clipboard.writeText(transcript);
     };
 
     const download = async () => {
@@ -63,11 +75,9 @@
             filters: [{name: 'Text', extensions: ['txt']}],
             defaultPath: 'transcript.txt',
         });
-        console.log('save in', path);
         if (!path) return;
-
         const encoder = new TextEncoder();
-        await writeFile(path, encoder.encode(generate.transcript ?? ''));
+        await writeFile(path, encoder.encode(transcript));
     };
 
     const open_mail = (body: string) => {
@@ -89,27 +99,26 @@
         {#if meeting_state}
             <div class="flex items-center gap-3">
                 <audio controls src={audio_path} class="h-10"></audio>
-                <!-- <PlayerAudio src={audio_path}/> -->
             </div>
             <div class="flex items-center gap-4">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
                 <button class="btn ghost" onclick={download}
                     ><DownloadIcon --size="1.2rem" />Télécharger</button
                 >
-                {#if current_id && generate.prompts.find((prompt) => prompt.id === current_id)?.title === 'Email' && generate.result[current_id] && settings.mail_client}
-                    <button
-                        class="btn ghost"
-                        onclick={() => current_id && open_mail(generate.result[current_id])}
-                    >
-                        <PaperPlane --size="1.2rem" />Envoyer
-                    </button>
-                    {#if mail_error}
-                        <p class="text-red-400 text-sm">{mail_error}</p>
+                {#if tabs.length > 0}
+                    {@const current = tabs[current_tab]}
+                    {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === current.id)}
+                    {#if prompt?.title === 'Email' && settings.mail_client && current.result}
+                        <button class="btn ghost" onclick={() => open_mail(current.result)}>
+                            <PaperPlaneIcon --size="1.2rem" />Envoyer
+                        </button>
+                        {#if mail_error}
+                            <p class="text-red-400 text-sm">{mail_error}</p>
+                        {/if}
                     {/if}
                 {/if}
             </div>
         {/if}
-
         <button class="btn ghost icon ms-auto" onclick={() => (is_settings_open = true)}>
             <SettingsIcon --size="1.2rem" />
         </button>
@@ -151,16 +160,17 @@
                     class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2"
                 >
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
-                        {#if generate.loading}
+                        {#if loading}
                             <p class="text-fg-2">Génération en cours...</p>
-                        {:else if current_id}
-                            {generate.result[current_id]}
+                        {:else if tabs.length > 0}
+                            {tabs[current_tab].result}
                         {/if}
                     </div>
                 </div>
             </div>
         {/if}
     </div>
+
     {#if meeting_state === 'transcript' || meeting_state === 'ai_result'}
         <div class="shrink-0 border-bg-2 p-4">
             <div class="flex items-center justify-center gap-4">
@@ -170,20 +180,27 @@
                 >
                     Transcription
                 </button>
-                {#each tabs as prompt (prompt.id)}
-                    <button
-                        class="btn {current_id === prompt.id && meeting_state === 'ai_result'
-                            ? 'secondary'
-                            : 'ghost'}"
-                        onclick={() => {
-                            meeting_state = 'ai_result';
-                            current_id = prompt.id;
-                        }}
-                    >
-                        {prompt.title}
-                    </button>
+                {#each tabs as tab, i}
+                    {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === tab.id)}
+                    {#if prompt}
+                        <button
+                            class="btn {current_tab === i && meeting_state === 'ai_result'
+                                ? 'secondary'
+                                : 'ghost'}"
+                            onclick={() => {
+                                current_tab = i;
+                                meeting_state = 'ai_result';
+                            }}
+                        >
+                            {prompt.title}
+                        </button>
+                    {/if}
                 {/each}
-                <button class="btn ghost" onclick={() => (is_prompts_open = true)}>
+                <button
+                    class="btn ghost"
+                    disabled={loading}
+                    onclick={() => (is_prompts_open = true)}
+                >
                     <CrossIcon rotate={45} --size="1.2rem" />
                 </button>
             </div>
@@ -191,7 +208,11 @@
     {/if}
 </div>
 
-<Dialog is_open={is_settings_open} onrequestclose={() => (is_settings_open = false)} position="center">
+<Dialog
+    is_open={is_settings_open}
+    onrequestclose={() => (is_settings_open = false)}
+    position="center"
+>
     <Settings onclose={() => (is_settings_open = false)} />
 </Dialog>
 <Dialog
@@ -200,9 +221,9 @@
     position="center"
 >
     <PromptDialog
-        onselect={(id) => {
-            meeting_state = 'ai_result';
-            current_id = prompt.id;
+        {tabs}
+        onselect={(prompt) => {
+            generate(prompt);
             is_prompts_open = false;
         }}
     />
