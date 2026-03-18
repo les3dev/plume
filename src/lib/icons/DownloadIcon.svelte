@@ -8,8 +8,11 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    ><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path
-        d="m7 10 5 5 5-5"
+    class="lucide lucide-file-down"
+    ><path
+        d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+    ></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M12 18v-6"></path><path
+        d="m9 15 3 3 3-3"
     ></path></svg
 >
 

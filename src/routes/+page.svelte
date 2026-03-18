@@ -29,15 +29,14 @@
     let audio_path = $state<string>();
     let is_settings_open = $state(false);
     let is_prompts_open = $state(false);
+    let used = $state<'recorder' | 'upload' | null>(null);
     let mail_error = $state<string>();
     let tabs = $state<{id: string; result: string}[]>([]);
     let current_tab = $state(0);
     let loading = $state(false);
     let transcript = $derived(
-        speech_block.map((speach) => `Speaker ${speach.speaker + 1}: ${speach.text}`).join('\n\n'),
+        speech_block.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
     );
-
-    $inspect(tabs, settings.mail_client);
 
     const generate = async (prompt: Prompt) => {
         if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript) return;
@@ -52,6 +51,7 @@
         tabs[current_tab].result = result;
         loading = false;
     };
+
     const on_audio_ready = async (path: string) => {
         if (path.startsWith('asset://')) {
             audio_path = decodeURIComponent(path);
@@ -95,34 +95,37 @@
 </script>
 
 <div class="flex h-screen flex-col">
-    <div class="flex shrink-0 items-center justify-between p-4">
+    <div class="flex shrink-0 items-center justify-between p-4 pb-2">
         {#if meeting_state}
-            <div class="flex items-center gap-3">
-                <audio controls src={audio_path} class="h-10"></audio>
-            </div>
-            <div class="flex items-center gap-4">
-                <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                <button class="btn ghost" onclick={download}
-                    ><DownloadIcon --size="1.2rem" />Télécharger</button
-                >
-                {#if tabs.length > 0}
-                    {@const current = tabs[current_tab]}
-                    {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === current.id)}
-                    {#if prompt?.title === 'Email' && settings.mail_client && current.result}
-                        <button class="btn ghost" onclick={() => open_mail(current.result)}>
-                            <PaperPlaneIcon --size="1.2rem" />Envoyer
-                        </button>
-                        {#if mail_error}
-                            <p class="text-red-400 text-sm">{mail_error}</p>
-                        {/if}
-                    {/if}
-                {/if}
-            </div>
+            <audio controls src={audio_path} class="h-10"></audio>
+        {:else}
+            <div></div>
         {/if}
-        <button class="btn ghost icon ms-auto" onclick={() => (is_settings_open = true)}>
+        <button class="btn ghost icon" onclick={() => (is_settings_open = true)}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </div>
+
+    {#if meeting_state}
+        <div class="flex shrink-0 items-center justify-end gap-4 px-4 pb-2">
+            <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
+            <button class="btn ghost" onclick={download}
+                ><DownloadIcon --size="1.2rem" />Télécharger</button
+            >
+            {#if tabs.length > 0}
+                {@const current = tabs[current_tab]}
+                {@const prompt = prompts_ctx.prompts.find((p) => p.id === current.id)}
+                {#if prompt?.title === 'Email' && settings.mail_client && current.result}
+                    <button class="btn ghost" onclick={() => open_mail(current.result)}>
+                        <PaperPlaneIcon --size="1.2rem" />Envoyer
+                    </button>
+                    {#if mail_error}
+                        <p class="text-red-400 text-sm">{mail_error}</p>
+                    {/if}
+                {/if}
+            {/if}
+        </div>
+    {/if}
 
     <div class="min-h-0 flex-1 px-6 pb-4">
         {#if !settings.deepgram_key || !settings.openrouter_key}
@@ -134,9 +137,26 @@
                 </div>
             </div>
         {:else if !meeting_state}
-            <div class="flex h-full flex-col items-center justify-center gap-6">
-                <SuperRecorder onfinish={on_audio_ready} />
-                <Upload onFinish={on_audio_ready} />
+            <div class="flex h-full flex-col items-center justify-center gap-8">
+                {#if used !== 'upload'}
+                    <SuperRecorder
+                        onstart={() => (used='recorder')}
+                        onfinish={(path) => {
+                            on_audio_ready(path);
+                        }}
+                    />
+                {/if}
+                {#if used !== 'recorder'}
+                    <div class="flex flex-col items-center gap-2">
+                        <Upload
+                            onFinish={(path) => {
+                                used = 'upload';
+                                on_audio_ready(path);
+                            }}
+                        />
+                        <p class="text-sm text-fg-2">Formats acceptés : .mp3, .wav</p>
+                    </div>
+                {/if}
             </div>
         {:else if meeting_state === 'record'}
             <div class="flex h-full items-center justify-center">
@@ -173,15 +193,15 @@
 
     {#if meeting_state === 'transcript' || meeting_state === 'ai_result'}
         <div class="shrink-0 border-bg-2 p-4">
-            <div class="flex items-center justify-center gap-4">
+            <div class="flex items-center gap-4">
                 <button
-                    class="btn ms-auto {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
+                    class="btn {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
                     onclick={() => (meeting_state = 'transcript')}
                 >
                     Transcription
                 </button>
                 {#each tabs as tab, i}
-                    {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === tab.id)}
+                    {@const prompt = prompts_ctx.prompts.find((p) => p.id === tab.id)}
                     {#if prompt}
                         <button
                             class="btn {current_tab === i && meeting_state === 'ai_result'
@@ -215,6 +235,7 @@
 >
     <Settings onclose={() => (is_settings_open = false)} />
 </Dialog>
+
 <Dialog
     is_open={is_prompts_open}
     onrequestclose={() => (is_prompts_open = false)}
