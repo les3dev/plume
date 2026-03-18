@@ -19,6 +19,7 @@
     import Settings from '$lib/settings/Settings.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
+    import { goto } from '$app/navigation';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
@@ -101,7 +102,7 @@
         {:else}
             <div></div>
         {/if}
-        <button class="btn ghost icon" onclick={() => (is_settings_open = true)}>
+        <button class="btn ghost icon" onclick={()=> goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </div>
