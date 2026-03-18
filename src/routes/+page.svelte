@@ -14,21 +14,23 @@
     import {get_transcribe_context} from '$lib/transcribe/transcribe_context.svelte';
     import type {SpeechBlock} from '$lib/transcribe/Transcribe.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
-    import Popover from '$lib/widgets/Popover.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlane from '$lib/icons/PaperPlane.svelte';
     import Settings from '$lib/settings/Settings.svelte';
+    import PromptDialog from '$lib/prompt/PromptDialog.svelte';
 
     const settings = get_settings_context();
     const generate = get_generate_context();
     const transcribe = get_transcribe_context();
 
     let speech_block = $state<SpeechBlock[]>([]);
-    let meeting_state = $state<'record' | 'transcript' | 'edit'>();
+    let meeting_state = $state<'record' | 'transcript' | 'ai_result'>();
     let audio_path = $state<string>();
-    let is_open = $state(false);
-    let show_menu = $state(false);
+    let is_settings_open = $state(false);
+    let is_prompts_open = $state(false);
     let mail_error = $state<string>();
+    let current_id = $state<string>();
+    let tabs = $derived(generate.prompts.filter((p) => p.id in generate.result));
 
     const on_audio_ready = async (path: string) => {
         // recorder
@@ -53,7 +55,7 @@
     });
 
     const copy = async () => {
-        await navigator.clipboard.writeText(generate.transcript ?? "");
+        await navigator.clipboard.writeText(generate.transcript ?? '');
     };
 
     const download = async () => {
@@ -65,7 +67,7 @@
         if (!path) return;
 
         const encoder = new TextEncoder();
-        await writeFile(path, encoder.encode(generate.transcript ?? ""));
+        await writeFile(path, encoder.encode(generate.transcript ?? ''));
     };
 
     const open_mail = (body: string) => {
@@ -94,10 +96,10 @@
                 <button class="btn ghost" onclick={download}
                     ><DownloadIcon --size="1.2rem" />Télécharger</button
                 >
-                {#if generate.current !== undefined && generate.tabs[generate.current]?.title === 'Email' && generate.result[generate.current] && settings.mail_client}
+                {#if current_id && generate.prompts.find((prompt) => prompt.id === current_id)?.title === 'Email' && generate.result[current_id] && settings.mail_client}
                     <button
                         class="btn ghost"
-                        onclick={() => open_mail(generate.result[generate.current])}
+                        onclick={() => current_id && open_mail(generate.result[current_id])}
                     >
                         <PaperPlane --size="1.2rem" />Envoyer
                     </button>
@@ -108,7 +110,7 @@
             </div>
         {/if}
 
-        <button class="btn ghost icon ms-auto" onclick={() => (is_open = true)}>
+        <button class="btn ghost icon ms-auto" onclick={() => (is_settings_open = true)}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </div>
@@ -143,69 +145,65 @@
                     </div>
                 </div>
             </div>
-        {:else if meeting_state === 'edit'}
+        {:else if meeting_state === 'ai_result'}
             <div class="flex h-full justify-center">
                 <div
                     class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2"
                 >
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
-                        {#each generate.tabs as tab, i}
-                            {#if i === generate.current}
-                                {#if generate.loading}
-                                    <p class="text-fg-2">{tab.title} en cours...</p>
-                                {:else}
-                                    {generate.result[i]}
-                                {/if}
-                            {/if}
-                        {/each}
+                        {#if generate.loading}
+                            <p class="text-fg-2">Génération en cours...</p>
+                        {:else if current_id}
+                            {generate.result[current_id]}
+                        {/if}
                     </div>
                 </div>
             </div>
         {/if}
     </div>
-    {#if meeting_state === 'transcript' || meeting_state === 'edit'}
+    {#if meeting_state === 'transcript' || meeting_state === 'ai_result'}
         <div class="shrink-0 border-bg-2 p-4">
             <div class="flex items-center justify-center gap-4">
                 <button
-                    class="btn {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
+                    class="btn ms-auto {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
                     onclick={() => (meeting_state = 'transcript')}
                 >
                     Transcription
                 </button>
-                {#each generate.tabs as tab, i}
-                    {#if generate.current === i && meeting_state === 'edit'}
-                        <button class="btn secondary">
-                            {tab.title}
-                        </button>
-                    {/if}
+                {#each tabs as prompt (prompt.id)}
+                    <button
+                        class="btn {current_id === prompt.id && meeting_state === 'ai_result'
+                            ? 'secondary'
+                            : 'ghost'}"
+                        onclick={() => {
+                            meeting_state = 'ai_result';
+                            current_id = prompt.id;
+                        }}
+                    >
+                        {prompt.title}
+                    </button>
                 {/each}
-                <button class="btn ghost" onclick={() => (show_menu = true)}>
+                <button class="btn ghost" onclick={() => (is_prompts_open = true)}>
                     <CrossIcon rotate={45} --size="1.2rem" />
                 </button>
             </div>
         </div>
     {/if}
-
-    <Dialog is_open={show_menu} onrequestclose={() => (show_menu = false)} position="bottom">
-        <div class="flex flex-col gap-2">
-            {#each generate.tabs as tab, i}
-                <button
-                    class="btn {generate.current === i && meeting_state === 'edit'
-                        ? 'secondary'
-                        : 'ghost'}"
-                    onclick={() => {
-                        meeting_state = 'edit';
-                        generate.generate(i);
-                        show_menu = false;
-                    }}
-                >
-                    {tab.title}
-                </button>
-            {/each}
-        </div>
-    </Dialog>
 </div>
 
-<Dialog {is_open} onrequestclose={() => (is_open = false)} position="center">
-    <Settings onclose={() => (is_open = false)} />
+<Dialog is_open={is_settings_open} onrequestclose={() => (is_settings_open = false)} position="center">
+    <Settings onclose={() => (is_settings_open = false)} />
+</Dialog>
+<Dialog
+    is_open={is_prompts_open}
+    onrequestclose={() => (is_prompts_open = false)}
+    position="center"
+>
+    <PromptDialog
+        onselect={(id) => {
+            meeting_state = 'ai_result';
+            current_id = prompt.id;
+            is_prompts_open = false;
+        }}
+    />
 </Dialog>

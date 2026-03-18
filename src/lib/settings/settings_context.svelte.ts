@@ -33,7 +33,7 @@ class SettingsContext extends StoreContext {
         await this.set_to_store('openai_key', key);
         await this.save_store();
     };
-
+    
     save_deepgram_key = async (key: string | undefined) => {
         if (!browser) return;
         this.deepgram_key = key;
