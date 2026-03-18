@@ -238,6 +238,7 @@
     is_open={is_prompts_open}
     onrequestclose={() => (is_prompts_open = false)}
     position="center"
+    style="--width: 560px; --max-width: 95vw; --padding: 1rem;"
 >
     <PromptDialog
         {tabs}
