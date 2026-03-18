@@ -19,6 +19,7 @@
         "@fontsource-variable/bricolage-grotesque": "^5.2.10",
         "@fontsource/bricolage-grotesque": "^5.2.10",
         "@fontsource/source-serif-pro": "^5.2.5",
+        "@fontsource/space-mono": "^5.2.9",
         "@openrouter/ai-sdk-provider": "^2.3.0",
         "@tailwindcss/vite": "^4.2.1",
         "@tauri-apps/api": "^2",

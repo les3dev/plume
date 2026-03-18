@@ -59,7 +59,7 @@
     };
 </script>
 
-<div class="flex flex-col items-center gap-6">
+<div class="flex flex-col items-center gap-10">
     <button
         class="capture-btn relative grid h-40 w-40 cursor-pointer place-items-center rounded-full text-bg hover:scale-120 active:scale-110"
         class:is-capturing={is_capturing}
@@ -75,7 +75,7 @@
     </button>
 
     {#if is_capturing}
-        <div class="text-xl font-bold">{elapsed}</div>
+        <div class="text-xl font-bold space-mono">{elapsed}</div>
     {/if}
 </div>
 
@@ -153,5 +153,9 @@
             opacity: 0;
             scale: 1.6;
         }
+    }
+
+    .space-mono{
+        font-family: 'Space Mono', monospace;
     }
 </style>

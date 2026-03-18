@@ -20,6 +20,9 @@ importers:
       '@fontsource/source-serif-pro':
         specifier: ^5.2.5
         version: 5.2.5
+      '@fontsource/space-mono':
+        specifier: ^5.2.9
+        version: 5.2.9
       '@openrouter/ai-sdk-provider':
         specifier: ^2.3.0
         version: 2.3.0(ai@6.0.116(zod@4.3.6))(zod@4.3.6)
@@ -286,6 +289,9 @@ packages:
 
   '@fontsource/source-serif-pro@5.2.5':
     resolution: {integrity: sha512-MTsjMrl2+81dar37wV1taDYzU+o9ArcuBVBkXRNb6JuNCBmrKOIAAmI1wC3cE+Q0eAlgXlfNrvZ7swP3l2M8tQ==}
+
+  '@fontsource/space-mono@5.2.9':
+    resolution: {integrity: sha512-b61faFOHEISQ/pD25G+cfGY9o/WW6lRv6hBQQfpWvEJ4y1V+S4gmth95EVyBE2VL3qDYHeVQ8nBzrplzdXTDDg==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1222,6 +1228,8 @@ snapshots:
   '@fontsource/bricolage-grotesque@5.2.10': {}
 
   '@fontsource/source-serif-pro@5.2.5': {}
+
+  '@fontsource/space-mono@5.2.9': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
