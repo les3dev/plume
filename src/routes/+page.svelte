@@ -140,7 +140,7 @@
             <div class="flex h-full flex-col items-center justify-center gap-8">
                 {#if used !== 'upload'}
                     <SuperRecorder
-                        onstart={() => (used='recorder')}
+                        onstart={() => (used = 'recorder')}
                         onfinish={(path) => {
                             on_audio_ready(path);
                         }}
@@ -160,9 +160,7 @@
             </div>
         {:else if meeting_state === 'record'}
             <div class="flex h-full items-center justify-center">
-                <div class="rounded-xl border border-dashed border-bg-2 p-6 text-fg-2">
-                    Transcription en cours...
-                </div>
+                <div class="rounded-xl p-6 text-fg-2">Transcription en cours...</div>
             </div>
         {:else if meeting_state === 'transcript'}
             <div class="flex h-full justify-center">
@@ -181,7 +179,7 @@
                 >
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
                         {#if loading}
-                            <p class="text-fg-2">Génération en cours...</p>
+                            <p class="text-cen text-fg-2">Génération en cours...</p>
                         {:else if tabs.length > 0}
                             {tabs[current_tab].result}
                         {/if}
@@ -193,7 +191,7 @@
 
     {#if meeting_state === 'transcript' || meeting_state === 'ai_result'}
         <div class="shrink-0 border-bg-2 p-4">
-            <div class="flex items-center gap-4">
+            <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-4">
                 <button
                     class="btn {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
                     onclick={() => (meeting_state = 'transcript')}
