@@ -22,14 +22,15 @@
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
 
-    let meeting_state = $state<'record' | 'transcript' | 'ai_result'>();
     let audio_path = $state<string>();
     let is_prompts_open = $state(false);
-    let used = $state<'recorder' | 'upload' | null>(null);
     let mail_error = $state<string>();
     let tabs = $state<{id: string; result: string}[]>([]);
+    let tab_type = $state<'transcript' | 'ai'>('transcript');
     let current_tab = $state(0);
-    let loading = $state(false);
+    let is_generating = $state(false);
+
+    let is_recording = $state(false);
 
     let meeting_name = $state('Nouvelle réunion');
 
@@ -41,31 +42,29 @@
     );
 
     const generate = async (prompt: Prompt) => {
-        if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript_text) return;
-        loading = true;
-        meeting_state = 'ai_result';
+        if (tabs.some((tab) => tab.id === prompt.id) || is_generating || !transcript_text) return;
+        is_generating = true;
         tabs.push({id: prompt.id, result: ''});
         current_tab = tabs.length - 1;
+        tab_type = 'ai';
         const result = await generate_summary(
             `${prompt.prompt} ${transcript_text}`,
             settings.openrouter_key,
             settings.model,
         );
         tabs[current_tab].result = result;
-        loading = false;
+        is_generating = false;
     };
 
     const transcript_timer = reactive_timer();
 
-    const on_audio_ready = async (path: string) => {
+    const start_transcript = async (path: string) => {
         transcript_timer.start();
         audio_path = path;
-        meeting_state = 'record';
         if (settings.deepgram_key) {
             transcript = await generate_transcript(path, settings.deepgram_key);
         }
         transcript_timer.stop();
-        meeting_state = 'transcript';
     };
 
     const copy = async () => {
@@ -96,13 +95,11 @@
     };
 
     const reset = () => {
-        meeting_state = undefined;
         audio_path = undefined;
         transcript = [];
         tabs = [];
         current_tab = 0;
-        loading = false;
-        used = null;
+        is_generating = false;
         meeting_name = 'Nouvelle réunion';
     };
 </script>
@@ -121,103 +118,74 @@
         </button>
     </header>
 
-    {#if meeting_state}
-        <div class="flex shrink-0 items-center justify-end gap-4 px-4 pb-2">
-            <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-            <button class="btn ghost" onclick={download}
-                ><DownloadIcon --size="1.2rem" />Télécharger</button
-            >
-            {#if tabs.length > 0}
-                {@const current = tabs[current_tab]}
-                {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === current.id)}
-                {#if prompt?.title === 'Email' && settings.mail_client && current.result}
-                    <button class="btn ghost" onclick={() => open_mail(current.result)}>
-                        <PaperPlaneIcon --size="1.2rem" />Envoyer
-                    </button>
-                    {#if mail_error}
-                        <p class="text-red-400 text-sm">{mail_error}</p>
-                    {/if}
-                {/if}
+    {#if !settings.deepgram_key || !settings.openrouter_key}
+        <div class="flex h-full items-center justify-center">
+            <div class="max-w-150 rounded-xl border border-dotted p-4 text-center">
+                Vos clés API OpenRouter et Deepgram ne sont pas encore configurées. Utilisez le <span
+                    class="text-primary">bouton Paramètres</span
+                > pour enregistrer vos clés API localement.
+            </div>
+        </div>
+        <!-- If no audio_path, need to record or upload audio first -->
+    {:else if audio_path === undefined}
+        <div class="flex grow flex-col items-center justify-center gap-14">
+            <SuperRecorder
+                onstart={() => (is_recording = true)}
+                onfinish={(path) => {
+                    start_transcript(path);
+                    is_recording = false;
+                }}
+            />
+            {#if !is_recording}
+                <Upload
+                    onfile={(path) => {
+                        start_transcript(path);
+                    }}
+                />
             {/if}
         </div>
-    {/if}
+    {:else if transcript instanceof Error}
+        <div>Erreur de transcript: {transcript.message}</div>
+    {:else if transcript.length === 0}
+        <div>Transcript en cours</div>
+    {:else}
+        <div class="flex grow flex-col overflow-hidden">
+            <div class="flex gap-2 px-4 pb-2">
+                <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
+                <button class="btn ghost" onclick={download}
+                    ><DownloadIcon --size="1.2rem" />Télécharger</button
+                >
 
-    <div class="min-h-0 flex-1 px-6 pb-4">
-        {#if !settings.deepgram_key || !settings.openrouter_key}
-            <div class="flex h-full items-center justify-center">
-                <div class="max-w-150 rounded-xl border border-dotted p-4 text-center">
-                    Vos clés API OpenRouter et Deepgram ne sont pas encore configurées. Utilisez le <span
-                        class="text-primary">bouton Paramètres</span
-                    > pour enregistrer vos clés API localement.
-                </div>
-            </div>
-        {:else if !meeting_state}
-            <div class="flex h-full flex-col items-center justify-center gap-8">
-                {#if used !== 'upload'}
-                    <SuperRecorder
-                        onstart={() => (used = 'recorder')}
-                        onfinish={(path) => {
-                            on_audio_ready(path);
-                        }}
-                    />
-                {/if}
-                {#if used !== 'recorder'}
-                    <div class="flex flex-col items-center gap-2">
-                        <Upload
-                            onfinish={(path) => {
-                                used = 'upload';
-                                on_audio_ready(path);
-                            }}
-                        />
-                        <p class="text-sm text-fg-2">Formats acceptés : .mp3, .wav</p>
-                    </div>
+                {#if tabs.length > 0}
+                    {@const current = tabs[current_tab]}
+                    {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === current.id)}
+                    {#if prompt?.title === 'Email' && settings.mail_client && current.result}
+                        <button class="btn ghost" onclick={() => open_mail(current.result)}>
+                            <PaperPlaneIcon --size="1.2rem" />Envoyer
+                        </button>
+                        {#if mail_error}
+                            <p class="text-red-400 text-sm">{mail_error}</p>
+                        {/if}
+                    {/if}
                 {/if}
             </div>
-        {:else if meeting_state === 'record'}
-            <div class="flex h-full items-center justify-center">
-                <div>durée : {transcript_timer.value}</div>
-                <div class="rounded-xl p-6 text-fg-2">Transcription en cours...</div>
+            <div class="flex grow flex-col overflow-auto">
+                {#if tab_type === 'transcript'}
+                    <TranscriptEditor {transcript} />
+                {:else if tab_type === 'ai'}
+                    {#if is_generating}
+                        <p class="text-cen text-fg-2">Génération en cours...</p>
+                    {:else if tabs.length > 0}
+                        {tabs[current_tab].result}
+                    {/if}
+                {/if}
             </div>
-        {:else if meeting_state === 'transcript'}
-            <div class="flex h-full justify-center">
-                <div
-                    class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2"
-                >
-                    <div class="min-h-0 flex-1 overflow-y-auto p-6">
-                        <div>durée : {transcript_timer.value}</div>
-                        {#if transcript instanceof Error}
-                            <div class="text-error">{transcript.message}</div>
-                        {:else if transcript === undefined}
-                            <div>Chargement…</div>
-                        {:else}
-                            <TranscriptEditor {transcript} />
-                        {/if}
-                    </div>
-                </div>
-            </div>
-        {:else if meeting_state === 'ai_result'}
-            <div class="flex h-full justify-center">
-                <div
-                    class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2"
-                >
-                    <div class="min-h-0 flex-1 overflow-y-auto p-6">
-                        {#if loading}
-                            <p class="text-cen text-fg-2">Génération en cours...</p>
-                        {:else if tabs.length > 0}
-                            {tabs[current_tab].result}
-                        {/if}
-                    </div>
-                </div>
-            </div>
-        {/if}
-    </div>
-
-    {#if meeting_state === 'transcript' || meeting_state === 'ai_result'}
+        </div>
         <div class="shrink-0 border-bg-2 p-4">
             <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-4">
                 <button
-                    class="btn {meeting_state === 'transcript' ? 'secondary' : 'ghost'}"
-                    onclick={() => (meeting_state = 'transcript')}
+                    class="btn {tab_type === 'transcript' ? 'secondary' : 'ghost'}"
+                    onclick={() => (tab_type = 'transcript')}
                 >
                     Transcription
                 </button>
@@ -225,12 +193,12 @@
                     {@const prompt = prompts_ctx.prompts.find((p) => p.id === tab.id)}
                     {#if prompt}
                         <button
-                            class="btn {current_tab === i && meeting_state === 'ai_result'
+                            class="btn {current_tab === i && tab_type === 'ai'
                                 ? 'secondary'
                                 : 'ghost'}"
                             onclick={() => {
                                 current_tab = i;
-                                meeting_state = 'ai_result';
+                                tab_type = 'ai';
                             }}
                         >
                             {prompt.title}
@@ -239,7 +207,7 @@
                 {/each}
                 <button
                     class="btn ghost"
-                    disabled={loading}
+                    disabled={is_generating}
                     onclick={() => (is_prompts_open = true)}
                 >
                     <CrossIcon rotate={45} --size="1.2rem" />

@@ -4,8 +4,8 @@
     import {convertFileSrc} from '@tauri-apps/api/core';
     import {open as open_file} from '@tauri-apps/plugin-dialog';
 
-    type Props = {onfinish?: (path: string) => void};
-    let {onfinish}: Props = $props();
+    type Props = {onfile?: (path: string) => void};
+    let {onfile}: Props = $props();
 
     let path = $state<string | null>(null);
     let error_message = $state<string>();
@@ -30,15 +30,18 @@
             return;
         }
         path = asset_path;
-        if (path) onfinish?.(path);
+        if (path) onfile?.(path);
     };
 </script>
 
-<button class="btn rounded-full! p-6!" onclick={upload}>
-    <UploadIcon />
-    {path ?? 'Ajouter un fichier audio'}
-</button>
-
 {#if error_message !== undefined}
     <div class="text-error">{error_message}</div>
+{:else}
+    <div class="flex flex-col items-center gap-4">
+        <button class="btn rounded-full! p-6!" onclick={upload}>
+            <UploadIcon />
+            {path ?? 'Ajouter un fichier audio'}
+        </button>
+        <p class="text-sm text-fg-2">Formats acceptés : .mp3, .wav</p>
+    </div>
 {/if}
