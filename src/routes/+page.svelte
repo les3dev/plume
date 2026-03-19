@@ -9,7 +9,6 @@
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
-    import {convertFileSrc} from '@tauri-apps/api/core';
     import {generate_summary} from '$lib/openrouter/openrouter';
     import type {SpeechBlock} from '$lib/transcribe/Transcript.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
@@ -18,7 +17,6 @@
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
-    import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
     import {generate_transcript} from '$lib/transcribe/generate_transcript';
 
@@ -60,19 +58,10 @@
 
     const on_audio_ready = async (path: string) => {
         transcript_timer.start();
-        if (path.startsWith('asset://')) {
-            audio_path = decodeURIComponent(path);
-            const system_path = decodeURIComponent(new URL(path).pathname);
-            meeting_state = 'record';
-            if (settings.deepgram_key) {
-                transcript = await generate_transcript(system_path, settings.deepgram_key);
-            }
-        } else {
-            audio_path = convertFileSrc(path);
-            meeting_state = 'record';
-            if (settings.deepgram_key) {
-                transcript = await generate_transcript(path, settings.deepgram_key);
-            }
+        audio_path = path;
+        meeting_state = 'record';
+        if (settings.deepgram_key) {
+            transcript = await generate_transcript(path, settings.deepgram_key);
         }
         transcript_timer.stop();
         meeting_state = 'transcript';
@@ -118,23 +107,18 @@
 </script>
 
 <div class="flex h-screen flex-col">
-    <div class="flex shrink-0 items-center justify-between p-4 pb-2">
-        {#if meeting_state}
-            <div class="flex items-center gap-2">
-                <button class="btn ghost" onclick={reset}>
-                    <ChevronIcon --size="1.2rem" />
-                </button>
-                <input type="text" bind:value={meeting_name} class="bg-transparent outline-none" />
-            </div>
-
+    <header class="flex items-center gap-2 p-4 pb-2">
+        <button class="btn ghost icon" onclick={reset}>
+            <CrossIcon --size="1.2rem" />
+        </button>
+        <input type="text" bind:value={meeting_name} class="bg-transparent outline-none" />
+        {#if audio_path !== undefined}
             <audio controls src={audio_path} class="h-10"></audio>
-        {:else}
-            <div></div>
         {/if}
-        <button class="btn ghost icon" onclick={() => goto('/settings')}>
+        <button class="btn ghost icon ms-auto" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
-    </div>
+    </header>
 
     {#if meeting_state}
         <div class="flex shrink-0 items-center justify-end gap-4 px-4 pb-2">
