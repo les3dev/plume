@@ -2,14 +2,13 @@
 /// Resamples to TARGET_RATE on demand via linear interpolation.
 #[derive(Default)]
 pub struct AudioBuffer {
-    samples: Vec<f32>, // raw samples as received
+    samples: Vec<f32>,
     sample_rate: u32,
     channels: u16,
 }
 
 impl AudioBuffer {
     pub fn push(&mut self, data: &[f32], sample_rate: u32, channels: u16) {
-        // First push sets the format
         if self.sample_rate == 0 {
             self.sample_rate = sample_rate;
             self.channels = channels;
@@ -17,42 +16,64 @@ impl AudioBuffer {
         self.samples.extend_from_slice(data);
     }
 
-    /// Returns samples resampled to TARGET_RATE, preserving channel count.
-    /// Output layout: interleaved, same channel count as input.
     pub fn resampled_frames(&self, target_rate: u32) -> Vec<Vec<f32>> {
         if self.sample_rate == 0 || self.channels == 0 {
             return vec![];
         }
         let ch = self.channels as usize;
-        let src_frames: Vec<Vec<f32>> = self.samples.chunks_exact(ch).map(|c| c.to_vec()).collect();
 
         if self.sample_rate == target_rate {
-            return src_frames;
+            return self.samples.chunks_exact(ch).map(|c| c.to_vec()).collect();
         }
 
-        // Linear interpolation resample
         let ratio = self.sample_rate as f64 / target_rate as f64;
-        let out_len = (src_frames.len() as f64 / ratio) as usize;
-        let mut out = Vec::with_capacity(out_len);
-        for i in 0..out_len {
+        let src_len = self.samples.len() / ch;
+        let out_len = (src_len as f64 / ratio) as usize;
+        let mut out = Vec::with_capacity(out_len * ch);
+        let zero_frame = vec![0.0f32; ch];
+
+        let mut i = 0;
+        while i < out_len {
             let pos = i as f64 * ratio;
             let idx = pos as usize;
             let frac = (pos - idx as f64) as f32;
-            let a = src_frames
-                .get(idx)
-                .cloned()
-                .unwrap_or_else(|| vec![0.0; ch]);
-            let b = src_frames
-                .get(idx + 1)
-                .cloned()
-                .unwrap_or_else(|| vec![0.0; ch]);
-            let frame: Vec<f32> = a
-                .iter()
-                .zip(b.iter())
-                .map(|(&x, &y)| x + frac * (y - x))
-                .collect();
-            out.push(frame);
+
+            let src_idx = idx * ch;
+            let next_src_idx = (idx + 1) * ch;
+
+            let (a_start, _) = if idx < src_len {
+                (src_idx, src_idx + ch)
+            } else {
+                (0, 0)
+            };
+            let (b_start, _) = if idx + 1 < src_len {
+                (next_src_idx, next_src_idx + ch)
+            } else {
+                (0, 0)
+            };
+
+            let has_a = idx < src_len;
+            let has_b = idx + 1 < src_len;
+
+            for c in 0..ch {
+                let a = if has_a {
+                    unsafe { *self.samples.get_unchecked(a_start + c) }
+                } else {
+                    0.0
+                };
+                let b = if has_b {
+                    unsafe { *self.samples.get_unchecked(b_start + c) }
+                } else {
+                    if has_a {
+                        a
+                    } else {
+                        unsafe { *zero_frame.get_unchecked(c) }
+                    }
+                };
+                out.push(a + frac * (b - a));
+            }
+            i += 1;
         }
-        out
+        out.chunks(ch).map(|c| c.to_vec()).collect()
     }
 }
