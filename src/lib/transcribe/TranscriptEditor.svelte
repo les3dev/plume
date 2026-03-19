@@ -4,8 +4,9 @@
 
     type Props = {
         transcript: TranscriptBlock[];
+        duration: string;
     };
-    let {transcript}: Props = $props();
+    let {transcript, duration}: Props = $props();
 
     const format_time = (second: number) => {
         return Duration.fromMillis(second * 1000).toFormat('m:ss');
@@ -13,6 +14,7 @@
 </script>
 
 <div class="flex h-full flex-col px-2">
+    <div class="self-end px-4 text-sm text-fg-1">Durée totale : {duration}</div>
     {#each transcript as block, index (index)}
         <div class="border-b border-bg-1 p-4 last:border-0">
             {#if index === 0 || transcript[index - 1].speaker !== block.speaker}

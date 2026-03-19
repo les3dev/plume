@@ -18,9 +18,12 @@
     import {goto} from '$app/navigation';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
     import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
+    import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
+
+    let meeting_name = $state('Nouvelle réunion');
 
     let audio_path = $state<string>();
     let is_prompts_open = $state(false);
@@ -32,14 +35,21 @@
 
     let is_recording = $state(false);
 
-    let meeting_name = $state('Nouvelle réunion');
-
     let transcript = $state<TranscriptBlock[] | Error>([]);
     let transcript_text = $derived(
         transcript instanceof Error
             ? ``
             : transcript.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
     );
+    const transcript_timer = reactive_timer();
+    const start_transcript = async (path: string) => {
+        transcript_timer.start();
+        audio_path = path;
+        if (settings.deepgram_key) {
+            transcript = await generate_transcript(path, settings.deepgram_key);
+        }
+        transcript_timer.stop();
+    };
 
     const generate = async (prompt: Prompt) => {
         if (tabs.some((tab) => tab.id === prompt.id) || is_generating || !transcript_text) return;
@@ -54,17 +64,6 @@
         );
         tabs[current_tab].result = result;
         is_generating = false;
-    };
-
-    const transcript_timer = reactive_timer();
-
-    const start_transcript = async (path: string) => {
-        transcript_timer.start();
-        audio_path = path;
-        if (settings.deepgram_key) {
-            transcript = await generate_transcript(path, settings.deepgram_key);
-        }
-        transcript_timer.stop();
     };
 
     const copy = async () => {
@@ -147,7 +146,10 @@
     {:else if transcript instanceof Error}
         <div>Erreur de transcript: {transcript.message}</div>
     {:else if transcript.length === 0}
-        <div>Transcript en cours</div>
+        <div class="flex grow flex-col items-center justify-center gap-4">
+            <ProgressCircle show_value={false} infinite={true} />
+            <div>Transcription en cours ({transcript_timer.value})…</div>
+        </div>
     {:else}
         <div class="flex grow flex-col overflow-hidden">
             <div class="flex gap-2 px-4 pb-2">
@@ -171,12 +173,14 @@
             </div>
             <div class="flex grow flex-col overflow-auto">
                 {#if tab_type === 'transcript'}
-                    <TranscriptEditor {transcript} />
+                    <TranscriptEditor {transcript} duration={transcript_timer.value} />
                 {:else if tab_type === 'ai'}
                     {#if is_generating}
-                        <p class="text-cen text-fg-2">Génération en cours...</p>
+                        <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
                     {:else if tabs.length > 0}
-                        {tabs[current_tab].result}
+                        <div class="flex h-full flex-col px-2 font-serif">
+                            {tabs[current_tab].result}
+                        </div>
                     {/if}
                 {/if}
             </div>
@@ -206,7 +210,7 @@
                     {/if}
                 {/each}
                 <button
-                    class="btn ghost"
+                    class="btn ghost icon"
                     disabled={is_generating}
                     onclick={() => (is_prompts_open = true)}
                 >

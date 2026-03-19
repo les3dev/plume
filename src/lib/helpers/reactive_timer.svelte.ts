@@ -23,7 +23,7 @@ export const reactive_timer = () => {
             start_time = new SvelteDate();
         },
         stop: () => {
-            end_time = now;
+            end_time = new SvelteDate(now.getTime());
         },
         get value() {
             return value;
