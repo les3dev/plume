@@ -5,14 +5,13 @@
     import Upload from '$lib/upload/Upload.svelte';
     import CopyIcon from '$lib/icons/CopyIcon.svelte';
     import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
-    import Transcript from '$lib/transcribe/Transcribe.svelte';
+    import Transcript from '$lib/transcribe/Transcript.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
     import {convertFileSrc} from '@tauri-apps/api/core';
-    import {get_transcribe_context} from '$lib/transcribe/transcribe_context.svelte';
     import {generate_summary} from '$lib/openrouter/openrouter';
-    import type {SpeechBlock} from '$lib/transcribe/Transcribe.svelte';
+    import type {SpeechBlock} from '$lib/transcribe/Transcript.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
@@ -22,10 +21,10 @@
     import {goto} from '$app/navigation';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
+    import {generate_transcript} from '$lib/transcribe/generate_transcript';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
-    const transcribe = get_transcribe_context();
 
     let speech_block = $state<SpeechBlock[]>([]);
     let meeting_state = $state<'record' | 'transcript' | 'ai_result'>();
@@ -37,19 +36,19 @@
     let tabs = $state<{id: string; result: string}[]>([]);
     let current_tab = $state(0);
     let loading = $state(false);
-    let transcript = $derived(
+    let transcript_text = $derived(
         speech_block.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
     );
     let meeting_name = $state('Nouvelle réunion');
 
     const generate = async (prompt: Prompt) => {
-        if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript) return;
+        if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript_text) return;
         loading = true;
         meeting_state = 'ai_result';
         tabs.push({id: prompt.id, result: ''});
         current_tab = tabs.length - 1;
         const result = await generate_summary(
-            `${prompt.prompt} ${transcript}`,
+            `${prompt.prompt} ${transcript_text}`,
             settings.openrouter_key,
         );
         tabs[current_tab].result = result;
@@ -58,24 +57,30 @@
 
     const transcript_timer = reactive_timer();
 
+    let transcript = $state<Awaited<ReturnType<typeof generate_transcript>>>();
+
     const on_audio_ready = async (path: string) => {
         transcript_timer.start();
         if (path.startsWith('asset://')) {
             audio_path = decodeURIComponent(path);
             const system_path = decodeURIComponent(new URL(path).pathname);
             meeting_state = 'record';
-            await transcribe.transcribe_from_path(system_path);
+            if (settings.deepgram_key) {
+                transcript = await generate_transcript(system_path, settings.deepgram_key);
+            }
         } else {
             audio_path = convertFileSrc(path);
             meeting_state = 'record';
-            await transcribe.transcribe_from_path(path);
+            if (settings.deepgram_key) {
+                transcript = await generate_transcript(path, settings.deepgram_key);
+            }
         }
         transcript_timer.stop();
         meeting_state = 'transcript';
     };
 
     const copy = async () => {
-        await navigator.clipboard.writeText(transcript);
+        await navigator.clipboard.writeText(transcript_text);
     };
 
     const download = async () => {
@@ -85,7 +90,7 @@
         });
         if (!path) return;
         const encoder = new TextEncoder();
-        await writeFile(path, encoder.encode(transcript));
+        await writeFile(path, encoder.encode(transcript_text));
     };
 
     const open_mail = (body: string) => {
@@ -124,7 +129,6 @@
             </div>
 
             <audio controls src={audio_path} class="h-10"></audio>
-            <!-- <PlayerAudio src={audio_path}/> -->
         {:else}
             <div></div>
         {/if}
@@ -176,7 +180,7 @@
                 {#if used !== 'recorder'}
                     <div class="flex flex-col items-center gap-2">
                         <Upload
-                            onFinish={(path) => {
+                            onfinish={(path) => {
                                 used = 'upload';
                                 on_audio_ready(path);
                             }}
@@ -197,7 +201,13 @@
                 >
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
                         <div>durée : {transcript_timer.value}</div>
-                        <Transcript speech_block_ready={(received) => (speech_block = received)} />
+                        {#if transcript instanceof Error}
+                            <div class="text-error">{transcript.message}</div>
+                        {:else if transcript === undefined}
+                            <div>Chargement…</div>
+                        {:else}
+                            <Transcript {transcript} />
+                        {/if}
                     </div>
                 </div>
             </div>

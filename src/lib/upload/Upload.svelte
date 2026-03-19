@@ -1,23 +1,22 @@
 <script lang="ts">
     import UploadIcon from '$lib/icons/UploadIcon.svelte';
-    import {get_transcribe_context} from '../transcribe/transcribe_context.svelte';
     import {open as open_file} from '@tauri-apps/plugin-dialog';
 
-    type Props = {onFinish?: (path: string) => void};
-    let {onFinish}: Props = $props();
+    type Props = {onfinish?: (path: string) => void};
+    let {onfinish}: Props = $props();
 
-    const transcribe = get_transcribe_context();
+    let path = $state<string | null>(null);
 
     const upload = async () => {
-        const path = await open_file({
+        path = await open_file({
             multiple: false,
             filters: [{name: 'Audio', extensions: ['mp3', 'wav', 'ogg']}],
         });
-        if (path) onFinish?.(path);
+        if (path) onfinish?.(path);
     };
 </script>
 
 <button class="btn rounded-full! p-6!" onclick={upload}>
     <UploadIcon />
-    {transcribe.file_name ?? 'Ajouter un fichier audio'}
+    {path ?? 'Ajouter un fichier audio'}
 </button>
