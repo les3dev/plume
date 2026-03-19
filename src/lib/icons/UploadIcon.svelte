@@ -8,9 +8,9 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="lucide lucide-upload"
-    ><path d="M12 3v12"></path><path d="m17 8-5-5-5 5"></path><path
-        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+    class="lucide lucide-download"
+    ><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path
+        d="m7 10 5 5 5-5"
     ></path></svg
 >
 

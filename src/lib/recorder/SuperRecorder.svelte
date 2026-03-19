@@ -62,12 +62,12 @@
         <div class="ring" style:animation-delay="0.5s" aria-hidden="true"></div>
         <div class="ring" style:animation-delay="1s" aria-hidden="true"></div>
 
-        <span class="icon icon-mic"><MicIcon --size="3.5rem" /></span>
-        <span class="icon icon-stop"><StopIcon --size="3.5rem" /></span>
+        <span class="icon icon-mic"><MicIcon --size="2.5rem" /></span>
+        <span class="icon icon-stop"><StopIcon --size="2.5rem" /></span>
     </button>
 
     {#if is_capturing}
-        <div class="font-mono text-xl font-bold">{timer.value}</div>
+        <div class="font-mono text-3xl font-bold mt-4">{timer.value}</div>
     {/if}
 </div>
 

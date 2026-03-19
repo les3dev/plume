@@ -13,6 +13,14 @@
     let editing_prompt: Prompt | null = $state(null);
     let creating = $state(false);
     let new_prompt = $state({title: '', prompt: ''});
+    let search = $state('');
+    let filtered_prompts = $derived(
+        prompt_context.prompts.filter(
+            (p) =>
+                !tabs.some((t) => t.id === p.id) &&
+                (search === '' || p.title.toLowerCase().includes(search.toLowerCase())),
+        ),
+    );
 </script>
 
 {#if creating}
@@ -104,9 +112,11 @@
         <div class="flex items-center gap-2">
             <input
                 type="search"
-                name=""
-                id=""
+                name="search-prompt"
+                id="search-prompt"
+                autocomplete="off"
                 class="min-w-0 flex-1 text-sm placeholder:text-fg-2"
+                bind:value={search}
                 placeholder="rechercher un prompt.."
             />
             <button class="btn shrink-0" onclick={() => (creating = true)}>
@@ -114,8 +124,8 @@
             </button>
         </div>
         <div class="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
-            {#each prompt_context.prompts.filter((p) => !tabs.some((t) => t.id === p.id)) as prompt (prompt.id)}
-                <div class="flex items-center gap-2 py-5 hover:bg-bg-1 rounded-xl">
+            {#each filtered_prompts as prompt (prompt.id)}
+                <div class="flex items-center gap-2 rounded-xl py-5 hover:bg-bg-1">
                     <button
                         class="btn ghost min-w-0 flex-1 justify-between px-5! py-4!"
                         onclick={() => onselect(prompt)}
