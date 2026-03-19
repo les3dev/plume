@@ -15,7 +15,6 @@
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
-    import Settings from '$lib/settings/Settings.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
@@ -29,7 +28,6 @@
     let speech_block = $state<SpeechBlock[]>([]);
     let meeting_state = $state<'record' | 'transcript' | 'ai_result'>();
     let audio_path = $state<string>();
-    let is_settings_open = $state(false);
     let is_prompts_open = $state(false);
     let used = $state<'recorder' | 'upload' | null>(null);
     let mail_error = $state<string>();
@@ -50,6 +48,7 @@
         const result = await generate_summary(
             `${prompt.prompt} ${transcript_text}`,
             settings.openrouter_key,
+            settings.model,
         );
         tabs[current_tab].result = result;
         loading = false;
@@ -264,14 +263,6 @@
         </div>
     {/if}
 </div>
-
-<Dialog
-    is_open={is_settings_open}
-    onrequestclose={() => (is_settings_open = false)}
-    position="center"
->
-    <Settings onclose={() => (is_settings_open = false)} />
-</Dialog>
 
 <Dialog
     is_open={is_prompts_open}

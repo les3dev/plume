@@ -2,11 +2,15 @@
 import {createOpenRouter} from '@openrouter/ai-sdk-provider';
 import {generateText} from 'ai';
 
-export const generate_summary = async (texte: string, apiKey: string | undefined) => {
+export const generate_summary = async (
+    transcript: string,
+    apiKey: string | undefined,
+    model: string,
+) => {
     const openrouter = createOpenRouter({apiKey});
     const {text} = await generateText({
-        model: openrouter.chat('nvidia/nemotron-3-super-120b-a12b:free'),
-        prompt: `Fais un résumé court :${texte}`,
+        model: openrouter.chat(model),
+        prompt: `Fais un résumé court :${transcript}`,
     });
 
     return text;
