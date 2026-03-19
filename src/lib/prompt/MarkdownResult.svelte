@@ -1,0 +1,16 @@
+<script lang="ts">
+    import {unified} from 'unified';
+    import remarkParse from 'remark-parse';
+    import remarkHtml from 'remark-html';
+
+    type Props = {
+        markdown: string;
+    };
+    let {markdown}: Props = $props();
+
+    let html = $derived(
+        unified().use(remarkParse).use(remarkHtml).processSync(markdown).toString(),
+    );
+</script>
+
+<div class="flex h-full flex-col px-6 font-serif" style:line-height="1.7">{@html html}</div>

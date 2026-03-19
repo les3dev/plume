@@ -9,7 +9,7 @@
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
-    import {generate_summary} from '$lib/openrouter/openrouter';
+    import {generate_summary} from '$lib/prompt/generate_summary';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
@@ -19,6 +19,8 @@
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
     import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
+    import PenIcon from '$lib/icons/PenIcon.svelte';
+    import MarkdownResult from '$lib/prompt/MarkdownResult.svelte';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
@@ -58,7 +60,8 @@
         current_tab = tabs.length - 1;
         tab_type = 'ai';
         const result = await generate_summary(
-            `${prompt.prompt} ${transcript_text}`,
+            prompt.prompt,
+            transcript_text,
             settings.openrouter_key,
             settings.model,
         );
@@ -110,9 +113,13 @@
         </button>
         <input type="text" bind:value={meeting_name} class="bg-transparent outline-none" />
         {#if audio_path !== undefined}
-            <audio controls src={audio_path} class="h-10"></audio>
+            <audio controls src={audio_path} class="ms-auto h-10"></audio>
+        {:else}
+            <button class="btn ghost ms-auto" onclick={() => (is_prompts_open = true)}
+                ><PenIcon --size="1.2rem" /> Editer les prompts</button
+            >
         {/if}
-        <button class="btn ghost icon ms-auto" onclick={() => goto('/settings')}>
+        <button class="btn ghost icon" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </header>
@@ -178,9 +185,7 @@
                     {#if is_generating}
                         <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
                     {:else if tabs.length > 0}
-                        <div class="flex h-full flex-col px-2 font-serif">
-                            {tabs[current_tab].result}
-                        </div>
+                        <MarkdownResult markdown={tabs[current_tab].result} />
                     {/if}
                 {/if}
             </div>
@@ -228,6 +233,7 @@
 >
     <PromptDialog
         {tabs}
+        has_audio={audio_path !== undefined}
         onselect={(prompt) => {
             generate(prompt);
             is_prompts_open = false;

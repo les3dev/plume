@@ -12,7 +12,7 @@
         "tauri": "tauri",
         "lint": "prettier --check .",
         "format": "prettier --write .",
-        "release" : "node scripts/release.js"
+        "release": "node scripts/release.js"
     },
     "license": "MIT",
     "dependencies": {
@@ -34,8 +34,11 @@
         "@types/luxon": "^3.7.1",
         "ai": "^6.0.116",
         "luxon": "^3.7.2",
+        "remark-html": "^16.0.1",
+        "remark-parse": "^11.0.0",
         "tailwindcss": "^4.2.1",
-        "tauri-plugin-mic-recorder-api": "^2.0.0"
+        "tauri-plugin-mic-recorder-api": "^2.0.0",
+        "unified": "^11.0.5"
     },
     "devDependencies": {
         "@sveltejs/adapter-static": "^3.0.6",
