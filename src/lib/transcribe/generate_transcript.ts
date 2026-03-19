@@ -1,7 +1,7 @@
 import {catch_error} from '$lib/helpers/catch_error';
 import {readFile} from '@tauri-apps/plugin-fs';
 
-export interface DeepgramListenResponse {
+interface DeepgramListenResponse {
     metadata: {
         transaction_key: string;
         request_id: string;
@@ -108,6 +108,12 @@ export interface DeepgramListenResponse {
     };
 }
 
+export type TranscriptBlock = {
+    speaker: number;
+    text: string;
+    start: number;
+};
+
 export const generate_transcript = async (path: string, api_key: string) => {
     const audio_bytes = await readFile(path);
     const params = new URLSearchParams({
@@ -132,5 +138,30 @@ export const generate_transcript = async (path: string, api_key: string) => {
     if (response instanceof Error) {
         return response;
     }
-    return await catch_error(async () => (await response.json()) as DeepgramListenResponse);
+    const data = await catch_error(async () => (await response.json()) as DeepgramListenResponse);
+    if (data instanceof Error) {
+        return data;
+    }
+    const channels = data.results.channels;
+    const best_channel = channels.reduce((best: any, current: any) => {
+        return current.alternatives[0].words.length > best.alternatives[0].words.length
+            ? current
+            : best;
+    });
+
+    const words = best_channel.alternatives[0].words;
+    const blocks: TranscriptBlock[] = [];
+    for (const word of words) {
+        const last = blocks[blocks.length - 1];
+        if (last && last.speaker === word.speaker) {
+            last.text += ' ' + word.punctuated_word;
+        } else {
+            blocks.push({
+                speaker: word.speaker ?? -1,
+                text: word.punctuated_word ?? '',
+                start: word.start,
+            });
+        }
+    }
+    return blocks;
 };

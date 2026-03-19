@@ -5,12 +5,11 @@
     import Upload from '$lib/upload/Upload.svelte';
     import CopyIcon from '$lib/icons/CopyIcon.svelte';
     import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
-    import Transcript from '$lib/transcribe/Transcript.svelte';
+    import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
     import {generate_summary} from '$lib/openrouter/openrouter';
-    import type {SpeechBlock} from '$lib/transcribe/Transcript.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
@@ -18,12 +17,11 @@
     import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
-    import {generate_transcript} from '$lib/transcribe/generate_transcript';
+    import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
 
-    let speech_block = $state<SpeechBlock[]>([]);
     let meeting_state = $state<'record' | 'transcript' | 'ai_result'>();
     let audio_path = $state<string>();
     let is_prompts_open = $state(false);
@@ -32,10 +30,15 @@
     let tabs = $state<{id: string; result: string}[]>([]);
     let current_tab = $state(0);
     let loading = $state(false);
-    let transcript_text = $derived(
-        speech_block.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
-    );
+
     let meeting_name = $state('Nouvelle réunion');
+
+    let transcript = $state<TranscriptBlock[] | Error>([]);
+    let transcript_text = $derived(
+        transcript instanceof Error
+            ? ``
+            : transcript.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
+    );
 
     const generate = async (prompt: Prompt) => {
         if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript_text) return;
@@ -53,8 +56,6 @@
     };
 
     const transcript_timer = reactive_timer();
-
-    let transcript = $state<Awaited<ReturnType<typeof generate_transcript>>>();
 
     const on_audio_ready = async (path: string) => {
         transcript_timer.start();
@@ -97,7 +98,7 @@
     const reset = () => {
         meeting_state = undefined;
         audio_path = undefined;
-        speech_block = [];
+        transcript = [];
         tabs = [];
         current_tab = 0;
         loading = false;
@@ -189,7 +190,7 @@
                         {:else if transcript === undefined}
                             <div>Chargement…</div>
                         {:else}
-                            <Transcript {transcript} />
+                            <TranscriptEditor {transcript} />
                         {/if}
                     </div>
                 </div>
