@@ -36,6 +36,8 @@
     let is_generating = $state(false);
 
     let is_recording = $state(false);
+    let start_time = $state<Date>();
+    let duration = $state<string>();
 
     let transcript = $state<TranscriptBlock[] | Error>([]);
     let transcript_text = $derived(
@@ -64,6 +66,8 @@
             transcript_text,
             settings.openrouter_key,
             settings.model,
+            start_time,
+            duration,
         );
         tabs[current_tab].result = result;
         is_generating = false;
@@ -137,14 +141,18 @@
         <div class="flex grow flex-col items-center justify-center gap-14">
             <SuperRecorder
                 onstart={() => (is_recording = true)}
-                onfinish={(path) => {
+                onfinish={(path, s, d) => {
+                    start_time = s;
+                    duration = d;
                     start_transcript(path);
                     is_recording = false;
                 }}
             />
             {#if !is_recording}
                 <Upload
-                    onfile={(path) => {
+                    onfile={(path, s, d) => {
+                        start_time = s;
+                        duration = d;
                         start_transcript(path);
                     }}
                 />

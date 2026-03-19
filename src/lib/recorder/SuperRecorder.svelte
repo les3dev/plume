@@ -10,7 +10,7 @@
          * Called automatically when the recording stops
          * @param audio_path The path of the saved save file, will be overwritten with the next recording.
          */
-        onfinish: (audio_path: string) => void;
+        onfinish: (audio_path: string, start_time: Date, duration: string) => void;
         onstart: () => void;
     };
     let {onfinish, onstart}: Props = $props();
@@ -45,7 +45,9 @@
                 return;
             }
             audio_path = asset_path;
-            onfinish(audio_path);
+            if (timer.start_time) {
+                onfinish(audio_path, timer.start_time, timer.value);
+            }
             is_capturing = false;
         }
     };
@@ -67,7 +69,7 @@
     </button>
 
     {#if is_capturing}
-        <div class="font-mono text-3xl font-bold mt-4">{timer.value}</div>
+        <div class="mt-4 font-mono text-3xl font-bold">{timer.value}</div>
     {/if}
 </div>
 
