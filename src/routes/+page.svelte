@@ -21,7 +21,7 @@
     import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
-    // import PlayerAudio from '$lib/widgets/PlayerAudio.svelte';
+    import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
@@ -56,7 +56,10 @@
         loading = false;
     };
 
+    const transcript_timer = reactive_timer();
+
     const on_audio_ready = async (path: string) => {
+        transcript_timer.start();
         if (path.startsWith('asset://')) {
             audio_path = decodeURIComponent(path);
             const system_path = decodeURIComponent(new URL(path).pathname);
@@ -67,6 +70,7 @@
             meeting_state = 'record';
             await transcribe.transcribe_from_path(path);
         }
+        transcript_timer.stop();
         meeting_state = 'transcript';
     };
 
@@ -183,6 +187,7 @@
             </div>
         {:else if meeting_state === 'record'}
             <div class="flex h-full items-center justify-center">
+                <div>durée : {transcript_timer.value}</div>
                 <div class="rounded-xl p-6 text-fg-2">Transcription en cours...</div>
             </div>
         {:else if meeting_state === 'transcript'}
@@ -191,6 +196,7 @@
                     class="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-bg-2"
                 >
                     <div class="min-h-0 flex-1 overflow-y-auto p-6">
+                        <div>durée : {transcript_timer.value}</div>
                         <Transcript speech_block_ready={(received) => (speech_block = received)} />
                     </div>
                 </div>

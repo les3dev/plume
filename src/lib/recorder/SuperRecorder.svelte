@@ -1,11 +1,9 @@
 <script lang="ts">
     import {catch_error} from '$lib/helpers/catch_error';
-    import {reactive_now} from '$lib/helpers/reactive_now.svelte';
     import MicIcon from '$lib/icons/MicIcon.svelte';
     import StopIcon from '$lib/icons/StopIcon.svelte';
     import {convertFileSrc, invoke} from '@tauri-apps/api/core';
-    import {SvelteDate} from 'svelte/reactivity';
-    import {Duration} from 'luxon';
+    import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
 
     type Props = {
         /**
@@ -13,20 +11,14 @@
          * @param audio_path The path of the saved save file, will be overwritten with the next recording.
          */
         onfinish: (audio_path: string) => void;
-        onstart: () => void
+        onstart: () => void;
     };
     let {onfinish, onstart}: Props = $props();
 
     let audio_path = $state<string>();
     let error_message = $state<string>();
     let is_capturing = $state(false);
-    let start_time = $state<SvelteDate>();
-    const now = reactive_now({scale: 1, interval: 1000});
-    const elapsed = $derived(
-        Duration.fromMillis(Math.max(0, now.getTime() - (start_time?.getTime() ?? now.getTime())))
-            .shiftTo('hours', 'minutes', 'seconds')
-            .toFormat('hh:mm:ss'),
-    );
+    let timer = reactive_timer();
 
     const toggle_capture = async () => {
         if (!is_capturing) {
@@ -35,11 +27,11 @@
                 error_message = error.message;
                 return;
             }
-            start_time = new SvelteDate();
+            timer.start();
             is_capturing = true;
-            onstart()
+            onstart();
         } else {
-            start_time = undefined;
+            timer.stop();
             const current_path = await catch_error(() => invoke<string>('stop_capture'));
             if (current_path instanceof Error) {
                 error_message = current_path.message;
@@ -75,7 +67,7 @@
     </button>
 
     {#if is_capturing}
-        <div class="text-xl font-bold font-mono">{elapsed}</div>
+        <div class="font-mono text-xl font-bold">{timer.value}</div>
     {/if}
 </div>
 

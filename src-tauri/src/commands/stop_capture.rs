@@ -39,6 +39,8 @@ pub async fn stop_capture(
         if total_frames == 0 {
             return Err("No audio data captured".into());
         }
+        // Uncomment to test loading state
+        // std::thread::sleep(std::time::Duration::from_secs(5));
 
         let mut mono_samples = Vec::with_capacity(total_frames);
         for i in 0..total_frames {
