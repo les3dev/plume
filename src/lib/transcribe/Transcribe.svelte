@@ -66,7 +66,7 @@
                         <span class="text-xs text-fg-2">{format_time(speech_b.start)}</span>
                     </p>
                 {/if}
-                <p class="serif">{speech_b.text}</p>
+                <p class="font-serif">{speech_b.text}</p>
             </div>
         {/each}
     </div>

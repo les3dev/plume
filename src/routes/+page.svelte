@@ -19,7 +19,9 @@
     import Settings from '$lib/settings/Settings.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
-    import { goto } from '$app/navigation';
+    import {goto} from '$app/navigation';
+    import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
+    // import PlayerAudio from '$lib/widgets/PlayerAudio.svelte';
 
     const settings = get_settings_context();
     const prompts_ctx = get_prompt_context();
@@ -38,6 +40,7 @@
     let transcript = $derived(
         speech_block.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
     );
+    let meeting_name = $state('Nouvelle réunion');
 
     const generate = async (prompt: Prompt) => {
         if (tabs.some((tab) => tab.id === prompt.id) || loading || !transcript) return;
@@ -93,16 +96,35 @@
         };
         open(urls[settings.mail_client]);
     };
+
+    const reset = () => {
+        meeting_state = undefined;
+        audio_path = undefined;
+        speech_block = [];
+        tabs = [];
+        current_tab = 0;
+        loading = false;
+        used = null;
+        meeting_name = 'Nouvelle réunion';
+    };
 </script>
 
 <div class="flex h-screen flex-col">
     <div class="flex shrink-0 items-center justify-between p-4 pb-2">
         {#if meeting_state}
+            <div class="flex items-center gap-2">
+                <button class="btn ghost" onclick={reset}>
+                    <ChevronIcon --size="1.2rem" />
+                </button>
+                <input type="text" bind:value={meeting_name} class="bg-transparent outline-none" />
+            </div>
+
             <audio controls src={audio_path} class="h-10"></audio>
+            <!-- <PlayerAudio src={audio_path}/> -->
         {:else}
             <div></div>
         {/if}
-        <button class="btn ghost icon" onclick={()=> goto('/settings')}>
+        <button class="btn ghost icon" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </div>
@@ -115,7 +137,7 @@
             >
             {#if tabs.length > 0}
                 {@const current = tabs[current_tab]}
-                {@const prompt = prompts_ctx.prompts.find((p) => p.id === current.id)}
+                {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === current.id)}
                 {#if prompt?.title === 'Email' && settings.mail_client && current.result}
                     <button class="btn ghost" onclick={() => open_mail(current.result)}>
                         <PaperPlaneIcon --size="1.2rem" />Envoyer
@@ -239,7 +261,6 @@
     is_open={is_prompts_open}
     onrequestclose={() => (is_prompts_open = false)}
     position="center"
-    style="--width: 560px; --max-width: 95vw; --padding: 1rem;"
 >
     <PromptDialog
         {tabs}

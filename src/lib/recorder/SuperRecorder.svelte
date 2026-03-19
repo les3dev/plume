@@ -61,7 +61,7 @@
 
 <div class="flex flex-col items-center gap-10">
     <button
-        class="capture-btn relative grid h-40 w-40 cursor-pointer place-items-center rounded-full text-bg hover:scale-120 active:scale-110"
+        class="capture-btn relative grid h-30 w-30 cursor-pointer place-items-center rounded-full text-bg hover:scale-120 active:scale-110"
         class:is-capturing={is_capturing}
         onclick={toggle_capture}
         title={is_capturing ? 'Stop capture' : 'Start capture'}
@@ -75,7 +75,7 @@
     </button>
 
     {#if is_capturing}
-        <div class="text-xl font-bold space-mono">{elapsed}</div>
+        <div class="text-xl font-bold font-mono">{elapsed}</div>
     {/if}
 </div>
 
@@ -153,9 +153,5 @@
             opacity: 0;
             scale: 1.6;
         }
-    }
-
-    .space-mono{
-        font-family: 'Space Mono', monospace;
     }
 </style>

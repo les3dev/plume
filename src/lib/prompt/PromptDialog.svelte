@@ -16,7 +16,7 @@
 </script>
 
 {#if creating}
-    <div class="flex w-full flex-col gap-6">
+    <div class="flex w-130 max-w-full flex-col gap-6">
         <div class="flex items-center gap-3">
             <button class="btn ghost" onclick={() => (creating = false)}>
                 <ChevronIcon --size="1.2rem" />
@@ -51,7 +51,7 @@
         </button>
     </div>
 {:else if editing_prompt !== null}
-    <div class="flex w-full flex-col gap-6">
+    <div class="flex w-130 max-w-full flex-col gap-6">
         <div class="flex items-center gap-3">
             <button class="btn ghost" onclick={() => (editing_prompt = null)}>
                 <ChevronIcon --size="1.2rem" />
@@ -100,7 +100,7 @@
         </div>
     </div>
 {:else}
-    <div class="flex w-full flex-col gap-6">
+    <div class="flex w-130 max-w-full flex-col gap-6">
         <div class="flex items-center gap-2">
             <input
                 type="search"
@@ -115,7 +115,7 @@
         </div>
         <div class="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
             {#each prompt_context.prompts.filter((p) => !tabs.some((t) => t.id === p.id)) as prompt (prompt.id)}
-                <div class="flex items-center gap-2 py-5">
+                <div class="flex items-center gap-2 py-5 hover:bg-bg-1 rounded-xl">
                     <button
                         class="btn ghost min-w-0 flex-1 justify-between px-5! py-4!"
                         onclick={() => onselect(prompt)}

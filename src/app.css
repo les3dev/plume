@@ -24,6 +24,7 @@
     --input-height: 2.4em;
     --font-sans: 'Space Grotesk Variable', system-ui, sans-serif;
     --font-mono: 'Space Mono', monospace;
+    --font-serif: 'Source Serif Pro', serif;
 }
 
 [color-scheme='light'] {

@@ -1,5 +1,3 @@
-
-
 import {browser} from '$app/environment';
 import {StoreContext} from '$lib/helpers/StoreContext';
 import {getContext, setContext} from 'svelte';
