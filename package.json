@@ -12,7 +12,7 @@
         "tauri": "tauri",
         "lint": "prettier --check .",
         "format": "prettier --write .",
-        "release": "node scripts/release.js"
+        "release": "node release.js"
     },
     "license": "MIT",
     "dependencies": {
