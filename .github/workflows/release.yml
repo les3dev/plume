@@ -42,21 +42,16 @@ jobs:
               uses: dtolnay/rust-toolchain@stable
 
             - name: Add macOS Rust targets
-              if: startsWith(matrix.platform, 'macos')
               run: |
                   rustup target add aarch64-apple-darwin || true
                   rustup target add x86_64-apple-darwin || true
 
-            - name: Install Tauri dependencies (Linux only)
-              if: matrix.platform == 'ubuntu-latest'
+            - name: Build AudioCapture dylib
               run: |
-                  sudo apt update
-                  sudo apt install -y \
-                    libwebkit2gtk-4.1-dev \
-                    libappindicator3-dev \
-                    librsvg2-dev \
-                    patchelf \
-                    libssl-dev
+                  cd src-tauri/audio-capture
+                  cargo build --release
+                  mkdir -p ../target/release
+                  cp target/release/libAudioCapture.dylib ../target/release/libAudioCapture.dylib
 
             - name: Build and release with Tauri
               uses: tauri-apps/tauri-action@v0
@@ -64,7 +59,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   tagName: ${{ github.ref_name }}
-                  releaseName: 'MonApp ${{ github.ref_name }}'
+                  releaseName: 'Plume ${{ github.ref_name }}'
                   releaseBody: |
                       Release automatique pour ${{ github.ref_name }}.
                   prerelease: true
