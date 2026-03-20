@@ -1,11 +1,22 @@
+import {browser} from '$app/environment';
 import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
+import {StoreContext} from '$lib/helpers/StoreContext';
 import {generate_summary} from '$lib/prompt/generate_summary';
 import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
 import {setContext, getContext} from 'svelte';
 
-class MeetingContext {
+interface Meeting {
+    name: string;
+    audio_path: string;
+    transcript: TranscriptBlock[];
+    start_recording_time: string;
+    recording_duration: string;
+}
+const store_path = 'meeting.json';
+
+class MeetingContext extends StoreContext {
     #settings = get_settings_context();
 
     meeting_name = $state('Nouvelle réunion');
@@ -26,6 +37,42 @@ class MeetingContext {
             : this.transcript.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
     );
 
+    constructor() {
+        super(store_path);
+        if (browser) this.load_store();
+    }
+
+    load_store = async () => {
+        const stored_meeting = await this.get_from_store<Meeting>('meeting');
+        if (stored_meeting) {
+            this.meeting_name = stored_meeting.name;
+            this.audio_path = stored_meeting.audio_path;
+            this.transcript = stored_meeting.transcript;
+            this.start_recording_time = new Date(stored_meeting.start_recording_time);
+            this.recording_duration = stored_meeting.recording_duration;
+        }
+    };
+
+    save_meeting = async () => {
+        if (
+            !this.start_recording_time ||
+            this.transcript instanceof Error ||
+            !this.recording_duration ||
+            !this.audio_path
+        ) {
+            return;
+        }
+        await this.set_to_store<Meeting>('meeting', {
+            name: this.meeting_name,
+            audio_path: this.audio_path,
+            transcript: this.transcript,
+            start_recording_time: this.start_recording_time.toISOString(),
+            recording_duration: this.recording_duration,
+        });
+
+        await this.save_store();
+    };
+
     start_transcript = async (raw_path: string, asset_path: string) => {
         this.transcript_timer.start();
         this.audio_path = asset_path;
@@ -33,6 +80,7 @@ class MeetingContext {
             this.transcript = await generate_transcript(raw_path, this.#settings.deepgram_key);
         }
         this.transcript_timer.stop();
+        await this.save_meeting();
     };
 
     generate = async (prompt: Prompt) => {
@@ -55,15 +103,18 @@ class MeetingContext {
             this.recording_duration,
         );
         this.is_generating = false;
+        await this.save_meeting();
     };
 
-    reset = () => {
+    reset = async () => {
         this.audio_path = undefined;
         this.transcript = [];
         this.ai_tabs = [];
         this.selected_ai_tab = 0;
         this.is_generating = false;
         this.meeting_name = 'Nouvelle réunion';
+        await this.set_to_store('meeting', null);
+        await this.save_store();
     };
 }
 

@@ -5,6 +5,7 @@
     import '@fontsource/source-serif-pro';
     import '@fontsource-variable/bricolage-grotesque';
     import {set_prompt_context} from '$lib/prompt/prompt_context.svelte';
+    
 
     let {children} = $props();
 
