@@ -1,5 +1,5 @@
 import {catch_error} from '$lib/helpers/catch_error';
-import {readFile} from '@tauri-apps/plugin-fs';
+import {readFile, BaseDirectory} from '@tauri-apps/plugin-fs';
 
 interface DeepgramListenResponse {
     metadata: {
@@ -115,7 +115,15 @@ export type TranscriptBlock = {
 };
 
 export const generate_transcript = async (path: string, api_key: string) => {
-    const audio_bytes = await readFile(path);
+    const audio_bytes = await catch_error(() => {
+        if (path.includes('capture.wav')) {
+            return readFile('capture.wav', {baseDir: BaseDirectory.AppData});
+        }
+        return readFile(path);
+    });
+    if (audio_bytes instanceof Error) {
+        return audio_bytes;
+    }
     const params = new URLSearchParams({
         model: 'nova-3',
         smart_format: 'true',

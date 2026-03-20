@@ -6,7 +6,7 @@
     import {Duration} from 'luxon';
 
     type Props = {
-        onfile?: (path: string, start_time: Date, duration: string) => void;
+        onfile?: (raw_path: string, asset_path: string, start_time: Date, duration: string) => void;
     };
     let {onfile}: Props = $props();
 
@@ -55,7 +55,7 @@
         }
 
         path = asset_path;
-        if (path) onfile?.(path, meta.start_time, meta.duration);
+        if (path) onfile?.(current_path, path, meta.start_time, meta.duration);
     };
 </script>
 

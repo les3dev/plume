@@ -46,11 +46,11 @@
             : transcript.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
     );
     const transcript_timer = reactive_timer();
-    const start_transcript = async (path: string) => {
+    const start_transcript = async (raw_path: string, asset_path: string) => {
         transcript_timer.start();
-        audio_path = path;
+        audio_path = asset_path;
         if (settings.deepgram_key) {
-            transcript = await generate_transcript(path, settings.deepgram_key);
+            transcript = await generate_transcript(raw_path, settings.deepgram_key);
         }
         transcript_timer.stop();
     };
@@ -141,25 +141,25 @@
         <div class="flex grow flex-col items-center justify-center gap-14">
             <SuperRecorder
                 onstart={() => (is_recording = true)}
-                onfinish={(path, s, d) => {
+                onfinish={(raw_path, asset_path, s, d) => {
                     start_time = s;
                     duration = d;
-                    start_transcript(path);
+                    start_transcript(raw_path, asset_path);
                     is_recording = false;
                 }}
             />
             {#if !is_recording}
                 <Upload
-                    onfile={(path, s, d) => {
+                    onfile={(raw_path, asset_path, s, d) => {
                         start_time = s;
                         duration = d;
-                        start_transcript(path);
+                        start_transcript(raw_path, asset_path);
                     }}
                 />
             {/if}
         </div>
     {:else if transcript instanceof Error}
-        <div>Erreur de transcript: {transcript.message}</div>
+        <div class="text-error">Erreur de transcript: {transcript.message}</div>
     {:else if transcript.length === 0}
         <div class="flex grow flex-col items-center justify-center gap-4">
             <ProgressCircle show_value={false} infinite={true} />

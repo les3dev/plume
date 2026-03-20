@@ -8,9 +8,17 @@
     type Props = {
         /**
          * Called automatically when the recording stops
-         * @param audio_path The path of the saved save file, will be overwritten with the next recording.
+         * @param raw_path The raw filesystem path of the saved audio file, for use with fs operations.
+         * @param asset_path The asset URL of the saved audio file, for use with audio playback.
+         * @param start_time The start time of the recording.
+         * @param duration The duration of the recording.
          */
-        onfinish: (audio_path: string, start_time: Date, duration: string) => void;
+        onfinish: (
+            raw_path: string,
+            asset_path: string,
+            start_time: Date,
+            duration: string,
+        ) => void;
         onstart: () => void;
     };
     let {onfinish, onstart}: Props = $props();
@@ -46,7 +54,7 @@
             }
             audio_path = asset_path;
             if (timer.start_time) {
-                onfinish(audio_path, timer.start_time, timer.value);
+                onfinish(current_path, audio_path, timer.start_time, timer.value);
             }
             is_capturing = false;
         }
