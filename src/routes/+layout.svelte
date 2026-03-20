@@ -7,6 +7,7 @@
     import {set_prompt_context} from '$lib/prompt/prompt_context.svelte';
 
     let {children} = $props();
+
     set_settings_context();
     set_meeting_context();
     set_prompt_context();

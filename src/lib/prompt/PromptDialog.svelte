@@ -1,25 +1,26 @@
 <script lang="ts">
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
-    import PenIcon from '$lib/icons/PenIcon.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import {get_prompt_context, type Prompt} from './prompt_context.svelte';
     type Props = {
-        has_audio: boolean;
-        onselect: (prompt: Prompt) => void;
-        tabs: {id: string; result: string}[];
+        ongenerate: (prompt: Prompt) => void;
+        can_generate: boolean;
+        used_prompts: {id: string; ai_generation: string}[];
     };
+    let {can_generate, used_prompts, ongenerate}: Props = $props();
 
-    let {has_audio, tabs, onselect}: Props = $props();
     const prompt_context = get_prompt_context();
+
     let editing_prompt: Prompt | null = $state(null);
     let creating = $state(false);
     let new_prompt = $state({title: '', prompt: ''});
     let search = $state('');
+
     let filtered_prompts = $derived(
         prompt_context.prompts.filter(
             (p) =>
-                !tabs.some((t) => t.id === p.id) &&
+                !used_prompts.some((t) => t.id === p.id) &&
                 (search === '' || p.title.toLowerCase().includes(search.toLowerCase())),
         ),
     );
@@ -137,8 +138,8 @@
                             </p>
                         </div>
                     </button>
-                    {#if has_audio}
-                        <button class="btn icon shrink-0" onclick={() => onselect(prompt)}>
+                    {#if can_generate}
+                        <button class="btn icon shrink-0" onclick={() => ongenerate(prompt)}>
                             <SparklesIcon --size="1rem" />
                         </button>
                     {/if}

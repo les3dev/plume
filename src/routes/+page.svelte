@@ -9,72 +9,27 @@
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
-    import {generate_summary} from '$lib/prompt/generate_summary';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import {open} from '@tauri-apps/plugin-shell';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
-    import {get_prompt_context, type Prompt} from '$lib/prompt/prompt_context.svelte';
+    import {get_prompt_context} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
-    import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
-    import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import PenIcon from '$lib/icons/PenIcon.svelte';
     import MarkdownResult from '$lib/prompt/MarkdownResult.svelte';
+    import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
 
+    const meeting = get_meeting_context();
     const settings = get_settings_context();
-    const prompts_ctx = get_prompt_context();
+    const prompts = get_prompt_context();
 
-    let meeting_name = $state('Nouvelle réunion');
-
-    let audio_path = $state<string>();
     let is_prompts_open = $state(false);
     let mail_error = $state<string>();
-    let tabs = $state<{id: string; result: string}[]>([]);
-    let tab_type = $state<'transcript' | 'ai'>('transcript');
-    let current_tab = $state(0);
-    let is_generating = $state(false);
-
     let is_recording = $state(false);
-    let start_time = $state<Date>();
-    let duration = $state<string>();
-
-    let transcript = $state<TranscriptBlock[] | Error>([]);
-    let transcript_text = $derived(
-        transcript instanceof Error
-            ? ``
-            : transcript.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
-    );
-    const transcript_timer = reactive_timer();
-    const start_transcript = async (raw_path: string, asset_path: string) => {
-        transcript_timer.start();
-        audio_path = asset_path;
-        if (settings.deepgram_key) {
-            transcript = await generate_transcript(raw_path, settings.deepgram_key);
-        }
-        transcript_timer.stop();
-    };
-
-    const generate = async (prompt: Prompt) => {
-        if (tabs.some((tab) => tab.id === prompt.id) || is_generating || !transcript_text) return;
-        is_generating = true;
-        tabs.push({id: prompt.id, result: ''});
-        current_tab = tabs.length - 1;
-        tab_type = 'ai';
-        const result = await generate_summary(
-            prompt.prompt,
-            transcript_text,
-            settings.openrouter_key,
-            settings.model,
-            start_time,
-            duration,
-        );
-        tabs[current_tab].result = result;
-        is_generating = false;
-    };
 
     const copy = async () => {
-        await navigator.clipboard.writeText(transcript_text);
+        await navigator.clipboard.writeText(meeting.transcript_text);
     };
 
     const download = async () => {
@@ -84,7 +39,7 @@
         });
         if (!path) return;
         const encoder = new TextEncoder();
-        await writeFile(path, encoder.encode(transcript_text));
+        await writeFile(path, encoder.encode(meeting.transcript_text));
     };
 
     const open_mail = (body: string) => {
@@ -99,25 +54,16 @@
         };
         open(urls[settings.mail_client]);
     };
-
-    const reset = () => {
-        audio_path = undefined;
-        transcript = [];
-        tabs = [];
-        current_tab = 0;
-        is_generating = false;
-        meeting_name = 'Nouvelle réunion';
-    };
 </script>
 
 <div class="flex h-screen flex-col">
     <header class="flex items-center gap-2 p-4 pb-2">
-        <button class="btn ghost icon" onclick={reset}>
+        <button class="btn ghost icon" onclick={meeting.reset}>
             <CrossIcon --size="1.2rem" />
         </button>
-        <input type="text" bind:value={meeting_name} class="bg-transparent outline-none" />
-        {#if audio_path !== undefined}
-            <audio controls src={audio_path} class="ms-auto h-10"></audio>
+        <input type="text" bind:value={meeting.meeting_name} class="bg-transparent outline-none" />
+        {#if meeting.audio_path !== undefined}
+            <audio controls src={meeting.audio_path} class="ms-auto h-10"></audio>
         {:else}
             <button class="btn ghost ms-auto" onclick={() => (is_prompts_open = true)}
                 ><PenIcon --size="1.2rem" /> Editer les prompts</button
@@ -137,33 +83,33 @@
             </div>
         </div>
         <!-- If no audio_path, need to record or upload audio first -->
-    {:else if audio_path === undefined}
+    {:else if meeting.audio_path === undefined}
         <div class="flex grow flex-col items-center justify-center gap-14">
             <SuperRecorder
                 onstart={() => (is_recording = true)}
-                onfinish={(raw_path, asset_path, s, d) => {
-                    start_time = s;
-                    duration = d;
-                    start_transcript(raw_path, asset_path);
+                onfinish={(raw_path, asset_path, start_time, duration) => {
+                    meeting.start_recording_time = start_time;
+                    meeting.recording_duration = duration;
+                    meeting.start_transcript(raw_path, asset_path);
                     is_recording = false;
                 }}
             />
             {#if !is_recording}
                 <Upload
-                    onfile={(raw_path, asset_path, s, d) => {
-                        start_time = s;
-                        duration = d;
-                        start_transcript(raw_path, asset_path);
+                    onfile={(raw_path, asset_path, start_time, duration) => {
+                        meeting.start_recording_time = start_time;
+                        meeting.recording_duration = duration;
+                        meeting.start_transcript(raw_path, asset_path);
                     }}
                 />
             {/if}
         </div>
-    {:else if transcript instanceof Error}
-        <div class="text-error">Erreur de transcript: {transcript.message}</div>
-    {:else if transcript.length === 0}
+    {:else if meeting.transcript instanceof Error}
+        <div class="text-error">Erreur de transcript: {meeting.transcript.message}</div>
+    {:else if meeting.transcript.length === 0}
         <div class="flex grow flex-col items-center justify-center gap-4">
             <ProgressCircle show_value={false} infinite={true} />
-            <div>Transcription en cours ({transcript_timer.value})…</div>
+            <div>Transcription en cours ({meeting.transcript_timer.value})…</div>
         </div>
     {:else}
         <div class="flex grow flex-col overflow-hidden">
@@ -173,11 +119,11 @@
                     ><DownloadIcon --size="1.2rem" />Télécharger</button
                 >
 
-                {#if tabs.length > 0}
-                    {@const current = tabs[current_tab]}
-                    {@const prompt = prompts_ctx.prompts.find((prompt) => prompt.id === current.id)}
-                    {#if prompt?.title === 'Email' && settings.mail_client && current.result}
-                        <button class="btn ghost" onclick={() => open_mail(current.result)}>
+                {#if meeting.ai_tabs.length > 0}
+                    {@const current_generation = meeting.ai_tabs[meeting.selected_ai_tab]}
+                    {@const prompt = prompts.prompts.find((p) => p.id === current_generation.id)}
+                    {#if prompt?.title === 'Email' && settings.mail_client && current_generation.ai_generation}
+                        <button class="btn ghost" onclick={() => open_mail(current_generation.ai_generation)}>
                             <PaperPlaneIcon --size="1.2rem" />Envoyer
                         </button>
                         {#if mail_error}
@@ -187,13 +133,18 @@
                 {/if}
             </div>
             <div class="flex grow flex-col overflow-auto">
-                {#if tab_type === 'transcript'}
-                    <TranscriptEditor {transcript} duration={transcript_timer.value} />
-                {:else if tab_type === 'ai'}
-                    {#if is_generating}
+                {#if meeting.tab_type === 'transcript'}
+                    <TranscriptEditor
+                        transcript={meeting.transcript}
+                        duration={meeting.transcript_timer.value}
+                    />
+                {:else if meeting.tab_type === 'ai'}
+                    {#if meeting.is_generating}
                         <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
-                    {:else if tabs.length > 0}
-                        <MarkdownResult markdown={tabs[current_tab].result} />
+                    {:else if meeting.ai_tabs.length > 0}
+                        <MarkdownResult
+                            markdown={meeting.ai_tabs[meeting.selected_ai_tab].ai_generation}
+                        />
                     {/if}
                 {/if}
             </div>
@@ -201,21 +152,21 @@
         <div class="shrink-0 border-bg-2 p-4">
             <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-4">
                 <button
-                    class="btn {tab_type === 'transcript' ? 'secondary' : 'ghost'}"
-                    onclick={() => (tab_type = 'transcript')}
+                    class="btn {meeting.tab_type === 'transcript' ? 'secondary' : 'ghost'}"
+                    onclick={() => (meeting.tab_type = 'transcript')}
                 >
                     Transcription
                 </button>
-                {#each tabs as tab, i}
-                    {@const prompt = prompts_ctx.prompts.find((p) => p.id === tab.id)}
+                {#each meeting.ai_tabs as tab, i}
+                    {@const prompt = prompts.prompts.find((p) => p.id === tab.id)}
                     {#if prompt}
                         <button
-                            class="btn {current_tab === i && tab_type === 'ai'
+                            class="btn {meeting.selected_ai_tab === i && meeting.tab_type === 'ai'
                                 ? 'secondary'
                                 : 'ghost'}"
                             onclick={() => {
-                                current_tab = i;
-                                tab_type = 'ai';
+                                meeting.selected_ai_tab = i;
+                                meeting.tab_type = 'ai';
                             }}
                         >
                             {prompt.title}
@@ -224,7 +175,7 @@
                 {/each}
                 <button
                     class="btn ghost icon"
-                    disabled={is_generating}
+                    disabled={meeting.is_generating}
                     onclick={() => (is_prompts_open = true)}
                 >
                     <CrossIcon rotate={45} --size="1.2rem" />
@@ -240,12 +191,11 @@
     position="center"
 >
     <PromptDialog
-        {tabs}
-        has_audio={audio_path !== undefined}
-        onselect={(prompt) => {
-            generate(prompt);
+        used_prompts={meeting.ai_tabs}
+        can_generate={meeting.audio_path !== undefined}
+        ongenerate={(prompt) => {
+            meeting.generate(prompt);
             is_prompts_open = false;
         }}
     />
 </Dialog>
-
