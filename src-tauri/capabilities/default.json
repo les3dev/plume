@@ -36,6 +36,9 @@
             "allow": [
                 {
                     "url": "https://api.deepgram.com/**"
+                },
+                {
+                    "url": "https://openrouter.ai/**"
                 }
             ]
         },
