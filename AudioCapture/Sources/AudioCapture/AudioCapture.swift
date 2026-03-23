@@ -1,5 +1,5 @@
 import Foundation
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 import AVFoundation
 import CoreAudio
 
@@ -14,143 +14,158 @@ public typealias AudioDataCallback = @convention(c) (
 
 // MARK: - Capture Engine
 
-@objc public class AudioCaptureEngine: NSObject {
+@objc public class AudioCaptureEngine: NSObject, @unchecked Sendable {
 
     private var stream: SCStream?
     private var streamOutput: AudioStreamOutput?
     private var isCapturing = false
     private var callback: AudioDataCallback?
-    private let stateLock = NSLock()
+    private let stateQueue = DispatchQueue(label: "com.plume.audiocapture.state")
+    private var stopping = false
 
     @objc public override init() {
         super.init()
     }
 
     /// Start capturing system audio (all apps, no microphone).
-    /// - Parameters:
-    ///   - callback: C function pointer called for each audio buffer.
-    ///   - completion: Called with nil on success, or an error message on failure.
     @objc public func startCapture(
         callback: @escaping AudioDataCallback,
         completion: @escaping (String?) -> Void
     ) {
-        stateLock.lock()
-        guard !isCapturing else {
-            stateLock.unlock()
-            completion("Already capturing")
-            return
-        }
-
-        self.callback = callback
-        stateLock.unlock()
-
-        Task.detached(priority: .userInitiated) {
-            do {
-                let available = try await SCShareableContent.excludingDesktopWindows(
-                    false, onScreenWindowsOnly: false
-                )
-
-                guard let display = available.displays.first else {
-                    completion("No display found")  // ← No MainActor
-                    return
-                }
-
-                let filter = SCContentFilter(
-                    display: display,
-                    excludingApplications: [],
-                    exceptingWindows: []
-                )
-
-                let config = SCStreamConfiguration()
-                config.capturesAudio = true
-                config.excludesCurrentProcessAudio = false
-                config.sampleRate = 48000
-                config.channelCount = 2
-                config.width = 2
-                config.height = 2
-                config.minimumFrameInterval = CMTime(value: 1, timescale: 1)
-
-                let output = AudioStreamOutput(callback: callback, engine: self)
-                let stream = SCStream(filter: filter, configuration: config, delegate: output)
-                try stream.addStreamOutput(
-                    output,
-                    type: .audio,
-                    sampleHandlerQueue: .global(qos: .userInteractive)
-                )
-                try await stream.startCapture()
-
-                // Update state on a background queue instead of MainActor
-                DispatchQueue.global(qos: .userInitiated).async {
-                    self.stateLock.lock()
-                    self.streamOutput = output
-                    self.stream = stream
-                    self.isCapturing = true
-                    self.stateLock.unlock()
-                    completion(nil)  // ← No MainActor
-                }
-
-            } catch {
-                completion(error.localizedDescription)  // ← No MainActor
+        stateQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            if self.isCapturing {
+                completion("Already capturing")
+                return
             }
-        }
-    }
+            
+            if self.stopping {
+                completion("Stop in progress")
+                return
+            }
 
-    /// Stop capturing system audio.
-    @objc public func stopCapture(completion: @escaping (String?) -> Void) {
-        stateLock.lock()
-        guard isCapturing, let stream = stream else {
-            stateLock.unlock()
-            completion("Not currently capturing")
-            return
-        }
+            self.callback = callback
+            let capturedCallback = callback
+            
+            Task.detached(priority: .userInitiated) { [weak self] in
+                guard let self = self else { return }
+                
+                do {
+                    let available = try await SCShareableContent.excludingDesktopWindows(
+                        false, onScreenWindowsOnly: false
+                    )
 
-        // Clear state immediately to prevent double-stop
-        self.stream = nil
-        self.streamOutput = nil
-        self.isCapturing = false
-        self.callback = nil
-        stateLock.unlock()
+                    guard let display = available.displays.first else {
+                        self.stateQueue.async {
+                            self.callback = nil
+                        }
+                        completion("No display found")
+                        return
+                    }
 
-        Task.detached(priority: .userInitiated) {
-            do {
-                try await stream.stopCapture()
-                completion(nil)
-            } catch {
-                // Stream may have already stopped - this is not an error
-                let errorMessage = error.localizedDescription.lowercased()
-                if errorMessage.contains("already stopped") || errorMessage.contains("does not exist") {
+                    let filter = SCContentFilter(
+                        display: display,
+                        excludingApplications: [],
+                        exceptingWindows: []
+                    )
+
+                    let config = SCStreamConfiguration()
+                    config.capturesAudio = true
+                    config.excludesCurrentProcessAudio = false
+                    config.sampleRate = 48000
+                    config.channelCount = 2
+                    config.width = 2
+                    config.height = 2
+                    config.minimumFrameInterval = CMTime(value: 1, timescale: 1)
+
+                    let output = AudioStreamOutput(callback: capturedCallback, engine: self)
+                    let stream = SCStream(filter: filter, configuration: config, delegate: output)
+                    try stream.addStreamOutput(
+                        output,
+                        type: .audio,
+                        sampleHandlerQueue: .global(qos: .userInteractive)
+                    )
+                    try await stream.startCapture()
+
+                    self.stateQueue.async {
+                        self.streamOutput = output
+                        self.stream = stream
+                        self.isCapturing = true
+                    }
+                    
                     completion(nil)
-                } else {
+
+                } catch {
+                    self.stateQueue.async {
+                        self.callback = nil
+                    }
                     completion(error.localizedDescription)
                 }
             }
         }
     }
 
+    /// Stop capturing system audio.
+    @objc public func stopCapture(completion: @escaping (String?) -> Void) {
+        stateQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            guard self.isCapturing, let stream = self.stream else {
+                completion("Not currently capturing")
+                return
+            }
+
+            self.isCapturing = false
+            self.stopping = true
+            let capturedStream = stream
+
+            Task.detached(priority: .userInitiated) { [weak self] in
+                do {
+                    try await capturedStream.stopCapture()
+                } catch {
+                    print("[AudioCapture] Error stopping stream: \(error)")
+                }
+                
+                self?.stateQueue.async {
+                    self?.stream = nil
+                    self?.streamOutput = nil
+                    self?.callback = nil
+                    self?.stopping = false
+                }
+                
+                completion(nil)
+            }
+        }
+    }
+
     @objc public var capturing: Bool {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        return isCapturing
+        var result = false
+        stateQueue.sync {
+            result = isCapturing
+        }
+        return result
     }
 
     func resetState() {
-        stateLock.lock()
-        self.stream = nil
-        self.streamOutput = nil
-        self.isCapturing = false
-        self.callback = nil
-        stateLock.unlock()
+        stateQueue.async { [weak self] in
+            self?.stream = nil
+            self?.streamOutput = nil
+            self?.isCapturing = false
+            self?.callback = nil
+            self?.stopping = false
+        }
     }
 }
 
 // MARK: - Stream Output Delegate
 
-private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate {
+private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sendable {
 
     private let callback: AudioDataCallback
     private weak var engine: AudioCaptureEngine?
 
-    init(callback: @escaping AudioDataCallback, engine: AudioCaptureEngine) {
+    init(callback: AudioDataCallback, engine: AudioCaptureEngine) {
         self.callback = callback
         self.engine = engine
     }
@@ -175,8 +190,6 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate {
         guard frameCount > 0, channelCount > 0 else { return }
 
         // Calculate the correct size for AudioBufferList with `channelCount` buffers.
-        // The default MemoryLayout<AudioBufferList>.size only fits 1 AudioBuffer —
-        // using it for 2+ channels causes memory corruption and app hangs.
         let baseSize = MemoryLayout<AudioBufferList>.offset(of: \AudioBufferList.mBuffers)!
         let bufferSize = MemoryLayout<AudioBuffer>.stride * Int(channelCount)
         let audioBufferListSize = baseSize + bufferSize
@@ -241,7 +254,6 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate {
 
     func stream(_ stream: SCStream, didStopWithError error: Error) {
         print("[AudioCapture] Stream stopped with error: \(error)")
-        // Reset state when stream stops unexpectedly
         engine?.resetState()
     }
 }
