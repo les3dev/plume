@@ -1,6 +1,6 @@
 <script lang="ts">
     import {goto} from '$app/navigation';
-    import { ai_models } from '$lib/ai_models';
+    import {ai_models} from '$lib/ai_models';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import InfoIcon from '$lib/icons/InfoIcon.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
@@ -50,13 +50,9 @@
                     {/if}
                 </div>
             </div>
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-3 ">
                 <label for="model" class="cursor-pointer text-sm font-medium">Modèle</label>
-                <select
-                    id="model"
-                    class="cursor-pointer"
-                    bind:value={model}
-                >
+                <select id="model" class="cursor-pointer" bind:value={model}>
                     {#each ai_models as model}
                         <option value={model.url}>{model.title}</option>
                     {/each}
@@ -75,7 +71,7 @@
                         placeholder="deepgramkey.."
                         bind:value={deepgram_key}
                     />
-                    <div class="flex gap-3">
+                    <div class="flex gap-3 ">
                         <button class="btn" onclick={() => settings.save_deepgram_key(deepgram_key)}
                             >Sauvegarder</button
                         >
@@ -93,7 +89,7 @@
                     </p>
                 </div>
 
-                <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-3 border-b pb-6 border-bg-2">
                     <label class="text-sm font-medium" for="mail">Mail par défaut</label>
                     <select
                         id="mail"
@@ -106,6 +102,23 @@
                         <option value="gmail">Gmail</option>
                         <option value="outlook">Outlook</option>
                     </select>
+                </div>
+                <div class="flex items-center justify-between gap-3 ">
+                    <label class="text-sm font-medium">Apparence</label>
+                    <div class="flex gap-2">
+                        <button
+                            class="btn {settings.color_scheme === 'light' ? 'secondary' : 'ghost'}"
+                            onclick={() => (settings.color_scheme = 'light')}
+                        >
+                            Clair
+                        </button>
+                        <button
+                            class="btn {settings.color_scheme === 'dark' ? 'secondary' : 'ghost'}"
+                            onclick={() => (settings.color_scheme = 'dark')}
+                        >
+                            Sombre
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

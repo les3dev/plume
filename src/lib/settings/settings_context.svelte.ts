@@ -11,16 +11,47 @@ class SettingsContext extends StoreContext {
     model = $state<string>(default_model);
     mail_client = $state<MailClient | undefined>(undefined);
 
+    #color_scheme = $state<'light' | 'dark'>('dark');
+    #match_light = matchMedia('(prefers-colors-scheme: light)');
+
+    constructor(store_path: string) {
+        super(store_path);
+        if (browser) {
+            this.load_store();
+            (async () => {
+                const system = this.#match_light ? 'light' : 'dark';
+                this.#color_scheme =
+                    (await this.get_from_store<'light' | 'dark'>('color_scheme')) ?? system;
+                document.documentElement.setAttribute('color-scheme', this.#color_scheme);
+            })();
+            this.#match_light.addEventListener('change', ({matches}) => {
+                this.#color_scheme = matches ? 'light' : 'dark';
+            });
+        }
+    }
+
+    get color_scheme() {
+        return this.#color_scheme;
+    }
+
+    set color_scheme(value: 'light' | 'dark') {
+        this.#color_scheme = value;
+        document.documentElement.setAttribute('color-scheme', value);
+        (async () => {
+            await this.set_to_store('color_scheme', value);
+            await this.save_store();
+        })();
+    }
+
+    toggle_color_scheme = () => {
+        this.color_scheme = this.color_scheme === 'light' ? 'dark' : 'light';
+    };
+
     save_mail_client = async (client: MailClient) => {
         this.mail_client = client;
         await this.set_to_store('mail_client', client);
         await this.save_store();
     };
-
-    constructor(store_path: string) {
-        super(store_path);
-        if (browser) this.load_store();
-    }
 
     load_store = async () => {
         this.openrouter_key = (await this.get_from_store<string>('openai_key')) ?? undefined;
