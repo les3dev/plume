@@ -4,6 +4,7 @@
     import StopIcon from '$lib/icons/StopIcon.svelte';
     import {convertFileSrc, invoke} from '@tauri-apps/api/core';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
+    import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
 
     type Props = {
         /**
@@ -25,58 +26,66 @@
 
     let audio_path = $state<string>();
     let error_message = $state<string>();
-    let is_capturing = $state(false);
+    let capture_state = $state<'initial' | 'capturing' | 'saving'>('initial');
     let timer = reactive_timer();
 
     const toggle_capture = async () => {
-        if (!is_capturing) {
+        if (capture_state === 'initial') {
             const error = await catch_error(() => invoke('start_capture'));
             if (error instanceof Error) {
                 error_message = error.message;
                 return;
             }
             timer.start();
-            is_capturing = true;
+            capture_state = 'capturing';
             onstart();
-        } else {
+        } else if (capture_state === 'capturing') {
             timer.stop();
+            capture_state = 'saving';
             const current_path = await catch_error(() => invoke<string>('stop_capture'));
             if (current_path instanceof Error) {
                 error_message = current_path.message;
-                is_capturing = false;
+                capture_state = 'initial';
                 return;
             }
             const asset_path = catch_error(() => convertFileSrc(current_path));
             if (asset_path instanceof Error) {
                 error_message = asset_path.message;
-                is_capturing = false;
+                capture_state = 'initial';
                 return;
             }
             audio_path = asset_path;
             if (timer.start_time) {
                 onfinish(current_path, audio_path, timer.start_time, timer.value);
             }
-            is_capturing = false;
+            capture_state = 'initial';
         }
     };
 </script>
 
 <div class="flex flex-col items-center gap-10">
-    <button
-        class="capture-btn relative grid h-30 w-30 cursor-pointer place-items-center rounded-full text-bg hover:scale-120 active:scale-110"
-        class:is-capturing={is_capturing}
-        onclick={toggle_capture}
-        title={is_capturing ? 'Stop capture' : 'Start capture'}
-    >
-        <div class="ring" aria-hidden="true"></div>
-        <div class="ring" style:animation-delay="0.5s" aria-hidden="true"></div>
-        <div class="ring" style:animation-delay="1s" aria-hidden="true"></div>
+    {#if capture_state === 'saving'}
+        <div class="flex grow flex-col items-center justify-center gap-4">
+            <ProgressCircle --color="var(--color-primary)" show_value={false} infinite={true} />
+            <div>Generating audio file…</div>
+        </div>
+    {:else}
+        <button
+            class="capture-btn relative grid h-30 w-30 cursor-pointer place-items-center rounded-full text-bg hover:scale-120 active:scale-110"
+            class:is-capturing={capture_state === 'capturing'}
+            onclick={toggle_capture}
+            title={capture_state === 'capturing' ? 'Stop capture' : 'Start capture'}
+        >
+            <div class="ring" aria-hidden="true"></div>
+            <div class="ring" style:animation-delay="0.5s" aria-hidden="true"></div>
+            <div class="ring" style:animation-delay="1s" aria-hidden="true"></div>
 
-        <span class="icon icon-mic"><MicIcon --size="2.5rem" /></span>
-        <span class="icon icon-stop"><StopIcon --size="2.5rem" /></span>
-    </button>
+            <span class="icon icon-mic"><MicIcon --size="2.5rem" /></span>
+            <span class="icon icon-stop"><StopIcon --size="2.5rem" /></span>
+        </button>
+    {/if}
 
-    {#if is_capturing}
+    {#if capture_state === 'capturing'}
         <div class="mt-4 font-mono text-3xl font-bold">{timer.value}</div>
     {/if}
 </div>

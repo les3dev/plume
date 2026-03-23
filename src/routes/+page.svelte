@@ -108,7 +108,7 @@
         <div class="text-error">Erreur de transcript: {meeting.transcript.message}</div>
     {:else if meeting.transcript.length === 0}
         <div class="flex grow flex-col items-center justify-center gap-4">
-            <ProgressCircle show_value={false} infinite={true} />
+            <ProgressCircle --color="var(--color-primary)" show_value={false} infinite={true} />
             <div>Transcription en cours ({meeting.transcript_timer.value})…</div>
         </div>
     {:else}
@@ -123,7 +123,10 @@
                     {@const current_generation = meeting.ai_tabs[meeting.selected_ai_tab]}
                     {@const prompt = prompts.prompts.find((p) => p.id === current_generation.id)}
                     {#if prompt?.title === 'Email' && settings.mail_client && current_generation.ai_generation}
-                        <button class="btn ghost" onclick={() => open_mail(current_generation.ai_generation)}>
+                        <button
+                            class="btn ghost"
+                            onclick={() => open_mail(current_generation.ai_generation)}
+                        >
                             <PaperPlaneIcon --size="1.2rem" />Envoyer
                         </button>
                         {#if mail_error}
