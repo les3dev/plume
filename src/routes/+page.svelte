@@ -105,7 +105,7 @@
             {/if}
         </div>
     {:else if meeting.transcript instanceof Error}
-        <div class="text-error">Erreur de transcript: {meeting.transcript.message}</div>
+        <div class="m-auto text-error">Erreur de transcript: {meeting.transcript.message}</div>
     {:else if meeting.transcript.length === 0}
         <div class="flex grow flex-col items-center justify-center gap-4">
             <ProgressCircle --color="var(--color-primary)" show_value={false} infinite={true} />
