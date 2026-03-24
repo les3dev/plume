@@ -18,7 +18,7 @@
             }
         ],
         "security": {
-            "csp": "default-src 'self'; asset: 'self'; img-src 'self' asset: https://asset.localhost; media-src asset: https://asset.localhost; connect-src 'self' https://api.deepgram.com",
+            "csp": "default-src 'self'; asset: 'self'; img-src 'self' asset: https://asset.localhost; media-src asset: https://asset.localhost; connect-src 'self' https://api.deepgram.com https://openrouter.ai",
             "assetProtocol": {
                 "enable": true,
                 "scope": ["$APPDATA/**"]
