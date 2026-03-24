@@ -25,6 +25,11 @@ typedef void (*AudioDataCallback)(
     uint32_t     channelCount
 );
 
+/// Error callback — called when the audio stream is unexpectedly stopped by the system.
+/// Common reasons: system interruptions, privacy changes, resource constraints.
+/// @param error Null-terminated error message string. Caller must free() this string.
+typedef void (*AudioErrorCallback)(const char* error);
+
 /// Create a new capture engine. Must be freed with audio_capture_destroy().
 AudioCaptureHandle audio_capture_create(void);
 
@@ -48,6 +53,10 @@ bool audio_capture_is_capturing(AudioCaptureHandle handle);
 
 /// Free an error string returned by audio_capture_start or audio_capture_stop.
 void audio_capture_free_error(const char* error);
+
+/// Set a callback to be invoked when the audio stream is unexpectedly stopped.
+/// This should be set before calling audio_capture_start().
+void audio_capture_set_error_callback(AudioCaptureHandle handle, AudioErrorCallback callback);
 
 #ifdef __cplusplus
 }

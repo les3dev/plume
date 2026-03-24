@@ -5,7 +5,7 @@ use crate::{
 use audio_capture::AudioCapture;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::Arc;
-use tauri::State;
+use tauri::{Emitter, State};
 
 #[tauri::command]
 pub fn start_capture(state: State<CaptureState>) -> Result<(), String> {
@@ -19,6 +19,15 @@ pub fn start_capture(state: State<CaptureState>) -> Result<(), String> {
     // ── System Audio ──
     let sys_buf = Arc::clone(&state.sys_buf);
     let mut engine = AudioCapture::new();
+
+    let app_handle = state.app_handle.lock().unwrap().clone();
+    if let Some(handle) = app_handle {
+        engine.set_error_callback(move |error| {
+            eprintln!("[AudioCapture] Stream stopped: {}", error);
+            let _ = handle.emit("audio-capture-error", &error);
+        });
+    }
+
     engine
         .start_capture(move |samples, _frames, sample_rate, channels| {
             sys_buf

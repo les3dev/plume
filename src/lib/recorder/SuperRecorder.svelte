@@ -3,8 +3,10 @@
     import MicIcon from '$lib/icons/MicIcon.svelte';
     import StopIcon from '$lib/icons/StopIcon.svelte';
     import {convertFileSrc, invoke} from '@tauri-apps/api/core';
+    import {listen, type UnlistenFn} from '@tauri-apps/api/event';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
+    import {onDestroy} from 'svelte';
 
     type Props = {
         /**
@@ -28,6 +30,23 @@
     let error_message = $state<string>();
     let capture_state = $state<'initial' | 'capturing' | 'saving'>('initial');
     let timer = reactive_timer();
+
+    let unlisten_error: UnlistenFn | undefined;
+
+    const setup_error_listener = async () => {
+        unlisten_error = await listen<string>('audio-capture-error', (event) => {
+            const error_msg = event.payload;
+            error_message = `Capture stopped: ${error_msg}`;
+            timer.stop();
+            capture_state = 'initial';
+        });
+    };
+
+    setup_error_listener();
+
+    onDestroy(() => {
+        unlisten_error?.();
+    });
 
     const toggle_capture = async () => {
         if (capture_state === 'initial') {

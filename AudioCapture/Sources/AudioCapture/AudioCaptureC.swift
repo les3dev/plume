@@ -65,6 +65,15 @@ public func audio_capture_is_capturing(_ handle: UnsafeMutableRawPointer) -> Boo
     return engine.capturing
 }
 
+@_cdecl("audio_capture_set_error_callback")
+public func audio_capture_set_error_callback(
+    _ handle: UnsafeMutableRawPointer,
+    _ callback: @escaping AudioErrorCallback
+) {
+    let engine = Unmanaged<AudioCaptureEngine>.fromOpaque(handle).takeUnretainedValue()
+    engine.setErrorCallback(callback)
+}
+
 @_cdecl("audio_capture_free_error")
 public func audio_capture_free_error(_ error: UnsafePointer<CChar>?) {
     guard let e = error else { return }

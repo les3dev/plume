@@ -3,13 +3,17 @@ import Foundation
 import AVFoundation
 import CoreAudio
 
-// MARK: - C-compatible callback type
+// MARK: - C-compatible callback types
 // Called from Rust with: audio data pointer, frame count, sample rate, channel count
 public typealias AudioDataCallback = @convention(c) (
     UnsafePointer<Float>?,  // interleaved float samples
     UInt32,                  // frame count
     Double,                  // sample rate
     UInt32                   // channel count
+) -> Void
+
+public typealias AudioErrorCallback = @convention(c) (
+    UnsafePointer<CChar>?  // error message (null-terminated)
 ) -> Void
 
 // MARK: - Capture Engine
@@ -20,6 +24,7 @@ public typealias AudioDataCallback = @convention(c) (
     private var streamOutput: AudioStreamOutput?
     private var isCapturing = false
     private var callback: AudioDataCallback?
+    private var errorCallback: AudioErrorCallback?
     private let stateQueue = DispatchQueue(label: "com.plume.audiocapture.state")
     private var stopping = false
 
@@ -147,6 +152,19 @@ public typealias AudioDataCallback = @convention(c) (
         return result
     }
 
+    @objc public func setErrorCallback(_ callback: @escaping AudioErrorCallback) {
+        stateQueue.async { [weak self] in
+            self?.errorCallback = callback
+        }
+    }
+
+    func notifyError(_ message: String) {
+        stateQueue.async { [weak self] in
+            guard let callback = self?.errorCallback else { return }
+            callback(UnsafePointer(strdup(message)))
+        }
+    }
+
     func resetState() {
         stateQueue.async { [weak self] in
             self?.stream = nil
@@ -253,7 +271,9 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
     }
 
     func stream(_ stream: SCStream, didStopWithError error: Error) {
-        print("[AudioCapture] Stream stopped with error: \(error)")
+        let errorMessage = error.localizedDescription
+        print("[AudioCapture] Stream stopped with error: \(errorMessage)")
+        engine?.notifyError(errorMessage)
         engine?.resetState()
     }
 }

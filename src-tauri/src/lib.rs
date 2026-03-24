@@ -48,6 +48,7 @@ use tauri::{
 };
 use tauri_plugin_positioner::{Position, WindowExt}; // Position = les positions prédéfinies (TrayCenter, TopRight...)
                                                      // WindowExt = ajoute la méthode move_window() aux fenêtres
+use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -55,16 +56,19 @@ pub fn run() {
     // En Rust, on "chaîne" les méthodes avec des "." à la ligne, c'est du method chaining
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())      // Permet d'exécuter des commandes shell
-        .manage(CaptureState::default())         // Partage l'état de capture entre les commandes
         .plugin(tauri_plugin_positioner::init()) // Active le positionnement intelligent des fenêtres
         .plugin(tauri_plugin_http::init())       // Permet les requêtes HTTP (Deepgram, OpenRouter...)
         .plugin(tauri_plugin_fs::init())         // Permet l'accès au système de fichiers
         .plugin(tauri_plugin_dialog::init())     // Permet d'ouvrir des boîtes de dialogue
         .plugin(tauri_plugin_store::Builder::new().build()) // Stockage persistant clé/valeur
         .plugin(tauri_plugin_opener::init())     // Permet d'ouvrir des fichiers/URLs externes
-        // Enregistre les fonctions Rust appelables depuis le frontend JS
         .invoke_handler(tauri::generate_handler![start_capture, stop_capture])
         .setup(|app| {
+            // Set up CaptureState with app handle for error callbacks
+            let mut state = CaptureState::default();
+            state.app_handle = Mutex::new(Some(app.handle().clone()));
+            app.manage(state);
+
             // "setup" = code exécuté UNE SEULE FOIS au démarrage, avant que l'app soit visible
             // "|app|" = closure qui reçoit l'application en paramètre
 

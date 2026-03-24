@@ -13,6 +13,8 @@ pub type AudioDataCallback = unsafe extern "C" fn(
     channel_count: u32,
 );
 
+pub type AudioErrorCallback = unsafe extern "C" fn(error: *const c_char);
+
 #[link(name = "AudioCapture", kind = "dylib")]
 extern "C" {
     fn audio_capture_create() -> RawHandle;
@@ -21,6 +23,7 @@ extern "C" {
     fn audio_capture_stop(handle: RawHandle) -> *const c_char;
     fn audio_capture_is_capturing(handle: RawHandle) -> bool;
     fn audio_capture_free_error(error: *const c_char);
+    fn audio_capture_set_error_callback(handle: RawHandle, callback: AudioErrorCallback);
 }
 
 // ── Error type ───────────────────────────────────────────────────────────────
@@ -50,6 +53,7 @@ fn check_error(ptr: *const c_char) -> Result<(), CaptureError> {
 // audio thread, not the thread that called start_capture.
 
 static CURRENT_CALLBACK: AtomicUsize = AtomicUsize::new(0);
+static CURRENT_ERROR_CALLBACK: AtomicUsize = AtomicUsize::new(0);
 
 // ── Safe wrapper ─────────────────────────────────────────────────────────────
 
@@ -91,6 +95,29 @@ impl AudioCapture {
 
         let err = unsafe { audio_capture_start(self.handle, trampoline) };
         check_error(err)
+    }
+
+    /// Set a callback to be invoked when the audio stream is unexpectedly stopped.
+    /// This should be called before start_capture() if you want to handle stream errors.
+    pub fn set_error_callback<F>(&mut self, callback: F)
+    where
+        F: Fn(String) + Send + 'static,
+    {
+        let boxed: Box<dyn Fn(String) + Send + 'static> = Box::new(callback);
+        let raw = Box::into_raw(Box::new(boxed)) as usize;
+
+        let old = CURRENT_ERROR_CALLBACK.swap(raw, Ordering::SeqCst);
+        if old != 0 {
+            unsafe {
+                drop(Box::from_raw(
+                    old as *mut Box<dyn Fn(String) + Send + 'static>,
+                ));
+            }
+        }
+
+        unsafe {
+            audio_capture_set_error_callback(self.handle, error_trampoline);
+        }
     }
 
     pub fn stop_capture(&mut self) -> Result<(), CaptureError> {
@@ -144,4 +171,14 @@ unsafe extern "C" fn trampoline(
     let cb = &*(ptr as *const Box<dyn Fn(&[f32], u32, f64, u32) + Send + 'static>);
     let slice = std::slice::from_raw_parts(samples, (frame_count * channel_count) as usize);
     cb(slice, frame_count, sample_rate, channel_count);
+}
+
+unsafe extern "C" fn error_trampoline(error: *const c_char) {
+    let ptr = CURRENT_ERROR_CALLBACK.load(Ordering::SeqCst);
+    if ptr == 0 {
+        return;
+    }
+    let cb = &*(ptr as *const Box<dyn Fn(String) + Send + 'static>);
+    let msg = CStr::from_ptr(error).to_string_lossy().into_owned();
+    cb(msg);
 }
