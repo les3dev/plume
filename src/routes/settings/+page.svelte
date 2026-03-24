@@ -50,7 +50,7 @@
                     {/if}
                 </div>
             </div>
-            <div class="flex flex-col gap-3 ">
+            <div class="flex flex-col gap-3">
                 <label for="model" class="cursor-pointer text-sm font-medium">Modèle</label>
                 <select id="model" class="cursor-pointer" bind:value={model}>
                     {#each ai_models as model}
@@ -71,7 +71,7 @@
                         placeholder="deepgramkey.."
                         bind:value={deepgram_key}
                     />
-                    <div class="flex gap-3 ">
+                    <div class="flex gap-3">
                         <button class="btn" onclick={() => settings.save_deepgram_key(deepgram_key)}
                             >Sauvegarder</button
                         >
@@ -89,7 +89,7 @@
                     </p>
                 </div>
 
-                <div class="flex flex-col gap-3 border-b pb-6 border-bg-2">
+                <div class="flex flex-col gap-3 border-b border-bg-2 pb-6">
                     <label class="text-sm font-medium" for="mail">Mail par défaut</label>
                     <select
                         id="mail"
@@ -103,8 +103,8 @@
                         <option value="outlook">Outlook</option>
                     </select>
                 </div>
-                <div class="flex items-center justify-between gap-3 ">
-                    <label class="text-sm font-medium">Apparence</label>
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm font-medium">Apparence</span>
                     <div class="flex gap-2">
                         <button
                             class="btn {settings.color_scheme === 'light' ? 'secondary' : 'ghost'}"
