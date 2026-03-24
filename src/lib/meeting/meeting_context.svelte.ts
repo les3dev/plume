@@ -90,17 +90,24 @@ class MeetingContext extends StoreContext {
             !this.transcript_text
         )
             return;
+
         this.is_generating = true;
+
         this.ai_tabs.push({id: prompt.id, ai_generation: ''});
-        this.selected_ai_tab = this.ai_tabs.length - 1;
+        const tab_index = this.ai_tabs.length - 1;
+        this.selected_ai_tab = tab_index;
         this.tab_type = 'ai';
-        this.ai_tabs[this.selected_ai_tab].ai_generation = await generate_summary(
+
+        await generate_summary(
             prompt.prompt,
             this.transcript_text,
             this.#settings.openrouter_key,
             this.#settings.model,
             this.start_recording_time,
             this.recording_duration,
+            (delta) => {
+                this.ai_tabs[tab_index].ai_generation += delta;
+            },
         );
         this.is_generating = false;
         await this.save_meeting();

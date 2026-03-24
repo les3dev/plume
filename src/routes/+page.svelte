@@ -142,12 +142,12 @@
                         duration={meeting.transcript_timer.value}
                     />
                 {:else if meeting.tab_type === 'ai'}
-                    {#if meeting.is_generating}
-                        <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
-                    {:else if meeting.ai_tabs.length > 0}
+                    {#if meeting.ai_tabs.length > 0}
                         <MarkdownResult
                             markdown={meeting.ai_tabs[meeting.selected_ai_tab].ai_generation}
                         />
+                    {:else if meeting.is_generating}et 
+                        <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
                     {/if}
                 {/if}
             </div>
