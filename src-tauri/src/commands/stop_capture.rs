@@ -12,10 +12,8 @@ pub async fn stop_capture(
         let mut guard = state.sys_engine.lock().unwrap();
         if let Some(engine) = guard.as_mut() {
             engine.stop_capture().map_err(|e| e.to_string())?;
-            *guard = None;
-        } else {
-            return Err("Not capturing".into());
         }
+        *guard = None;
     }
 
     let mic_stream = state.mic_stream.lock().unwrap().take();

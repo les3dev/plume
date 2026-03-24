@@ -27,6 +27,7 @@ public typealias AudioErrorCallback = @convention(c) (
     private var errorCallback: AudioErrorCallback?
     private let stateQueue = DispatchQueue(label: "com.plume.audiocapture.state")
     private var stopping = false
+    private var _captureStartTime: Date?
 
     @objc public override init() {
         super.init()
@@ -97,6 +98,7 @@ public typealias AudioErrorCallback = @convention(c) (
                         self.streamOutput = output
                         self.stream = stream
                         self.isCapturing = true
+                        self._captureStartTime = Date()
                     }
                     
                     completion(nil)
@@ -159,9 +161,12 @@ public typealias AudioErrorCallback = @convention(c) (
     }
 
     func notifyError(_ message: String) {
-        stateQueue.async { [weak self] in
-            guard let callback = self?.errorCallback else { return }
-            callback(UnsafePointer(strdup(message)))
+        let capturedCallback = self.errorCallback
+        let capturedMessage = strdup(message)
+        DispatchQueue.global(qos: .userInitiated).async {
+            if let callback = capturedCallback {
+                callback(UnsafePointer(capturedMessage))
+            }
         }
     }
 
@@ -172,6 +177,7 @@ public typealias AudioErrorCallback = @convention(c) (
             self?.isCapturing = false
             self?.callback = nil
             self?.stopping = false
+            self?._captureStartTime = nil
         }
     }
 }
@@ -182,10 +188,12 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
 
     private let callback: AudioDataCallback
     private weak var engine: AudioCaptureEngine?
+    private let startTime: Date
 
     init(callback: AudioDataCallback, engine: AudioCaptureEngine) {
         self.callback = callback
         self.engine = engine
+        self.startTime = Date()
     }
 
     // Called by ScreenCaptureKit for every audio buffer
@@ -196,6 +204,13 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
     ) {
         guard type == .audio else { return }
         guard sampleBuffer.isValid else { return }
+
+        // TEST: Uncomment to randomly simulate stream errors after 10 seconds
+        // if Int.random(in: 1...100) <= 5,
+        //    Date().timeIntervalSince(startTime) >= 10 {
+        //     engine?.notifyError("Stream was stopped by the system (TEST)")
+        //     return
+        // }
 
         // Extract format description
         guard let formatDesc = sampleBuffer.formatDescription,

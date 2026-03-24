@@ -15,6 +15,7 @@ pub struct CaptureState {
     pub mic_stream: Mutex<Option<SafeStream>>,
     pub mic_buf: Arc<Mutex<AudioBuffer>>,
     pub app_handle: Mutex<Option<AppHandle>>,
+    pub unexpected_stop: Mutex<bool>,
 }
 
 pub const TARGET_RATE: u32 = 16_000;

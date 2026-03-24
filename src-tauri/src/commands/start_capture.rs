@@ -15,16 +15,21 @@ pub fn start_capture(state: State<CaptureState>) -> Result<(), String> {
 
     *state.sys_buf.lock().unwrap() = AudioBuffer::default();
     *state.mic_buf.lock().unwrap() = AudioBuffer::default();
+    *state.unexpected_stop.lock().unwrap() = false;
 
     // ── System Audio ──
     let sys_buf = Arc::clone(&state.sys_buf);
     let mut engine = AudioCapture::new();
 
     let app_handle = state.app_handle.lock().unwrap().clone();
+    let unexpected_stop_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let flag_for_callback = Arc::clone(&unexpected_stop_flag);
+
     if let Some(handle) = app_handle {
         engine.set_error_callback(move |error| {
             eprintln!("[AudioCapture] Stream stopped: {}", error);
-            let _ = handle.emit("audio-capture-error", &error);
+            flag_for_callback.store(true, std::sync::atomic::Ordering::SeqCst);
+            let _ = handle.emit("audio-capture-save", &error);
         });
     }
 

@@ -31,21 +31,47 @@
     let capture_state = $state<'initial' | 'capturing' | 'saving'>('initial');
     let timer = reactive_timer();
 
-    let unlisten_error: UnlistenFn | undefined;
+    let unlisten_save: UnlistenFn | undefined;
+
+    const save_capture = async (error_msg?: string) => {
+        timer.stop();
+        capture_state = 'saving';
+        const current_path = await catch_error(() => invoke<string>('stop_capture'));
+        capture_state = 'initial';
+        if (current_path instanceof Error) {
+            error_message = error_msg
+                ? `Capture interrupted: ${error_msg}, save failed: ${current_path.message}`
+                : current_path.message;
+            return;
+        }
+        const asset_path = catch_error(() => convertFileSrc(current_path));
+        if (asset_path instanceof Error) {
+            error_message = error_msg
+                ? `Capture interrupted: ${error_msg}, convert failed: ${asset_path.message}`
+                : asset_path.message;
+            return;
+        }
+        if (error_msg) {
+            error_message = `Capture interrupted: ${error_msg}`;
+            return;
+        }
+        if (timer.start_time) {
+            onfinish(current_path, asset_path, timer.start_time, timer.value);
+        }
+    };
 
     const setup_error_listener = async () => {
-        unlisten_error = await listen<string>('audio-capture-error', (event) => {
+        unlisten_save = await listen<string>('audio-capture-save', async (event) => {
             const error_msg = event.payload;
-            error_message = `Capture stopped: ${error_msg}`;
-            timer.stop();
-            capture_state = 'initial';
+            error_message = `Capture interrupted: ${error_msg}`;
+            await save_capture(error_msg);
         });
     };
 
     setup_error_listener();
 
     onDestroy(() => {
-        unlisten_error?.();
+        unlisten_save?.();
     });
 
     const toggle_capture = async () => {
@@ -59,25 +85,7 @@
             capture_state = 'capturing';
             onstart();
         } else if (capture_state === 'capturing') {
-            timer.stop();
-            capture_state = 'saving';
-            const current_path = await catch_error(() => invoke<string>('stop_capture'));
-            if (current_path instanceof Error) {
-                error_message = current_path.message;
-                capture_state = 'initial';
-                return;
-            }
-            const asset_path = catch_error(() => convertFileSrc(current_path));
-            if (asset_path instanceof Error) {
-                error_message = asset_path.message;
-                capture_state = 'initial';
-                return;
-            }
-            audio_path = asset_path;
-            if (timer.start_time) {
-                onfinish(current_path, audio_path, timer.start_time, timer.value);
-            }
-            capture_state = 'initial';
+            await save_capture();
         }
     };
 </script>
