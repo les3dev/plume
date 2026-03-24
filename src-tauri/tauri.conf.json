@@ -10,11 +10,16 @@
         "frontendDist": "../build"
     },
     "app": {
+        "trayIcon": {
+            "iconPath": "icons/tray-icon.png",
+            "iconAsTemplate": true
+        },
         "windows": [
             {
                 "title": "plume",
                 "width": 600,
-                "height": 800
+                "height": 800,
+                "visible": false
             }
         ],
         "security": {
