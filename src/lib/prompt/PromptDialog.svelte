@@ -2,6 +2,7 @@
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
+    import PenIcon from '$lib/icons/PenIcon.svelte';
     import {get_prompt_context, type Prompt} from './prompt_context.svelte';
     type Props = {
         ongenerate: (prompt: Prompt) => void;
@@ -26,7 +27,7 @@
     );
 </script>
 
-<div class="w-lg">
+<div class="min-w-lg">
     {#if creating}
         <div class="flex items-center gap-3 pb-4">
             <button class="btn ghost icon" onclick={() => (creating = false)}>
@@ -34,12 +35,10 @@
             </button>
             <h1>Ajouter un prompt</h1>
         </div>
-
         <div class="flex flex-col gap-2">
             <label for="new-title">Titre</label>
             <input type="text" id="new-title" bind:value={new_prompt.title} class="w-full" />
         </div>
-
         <div class="flex flex-col gap-2 pt-4">
             <label for="new-prompt">Prompt</label>
             <textarea
@@ -49,7 +48,6 @@
                 rows="15"
             ></textarea>
         </div>
-
         <button
             class="btn mt-4 w-fit"
             onclick={() => {
@@ -67,12 +65,10 @@
             </button>
             <h1>Editer le prompt</h1>
         </div>
-
         <div class="flex flex-col gap-2">
             <label for="title">Titre</label>
             <input type="text" id="title" bind:value={editing_prompt.title} class="w-full" />
         </div>
-
         <div class="flex flex-col gap-2 pt-4">
             <label for="prompt">Prompt</label>
             <textarea
@@ -82,7 +78,6 @@
                 rows="15"
             ></textarea>
         </div>
-
         <div class="flex gap-3 pt-4">
             <button
                 class="btn"
@@ -108,7 +103,7 @@
             </button>
         </div>
     {:else}
-        <div class="ms-4 flex items-center gap-2">
+        <div class="flex items-center gap-2 pb-4">
             <input
                 type="search"
                 name="search-prompt"
@@ -116,31 +111,33 @@
                 autocomplete="off"
                 class="min-w-0 flex-1 text-sm placeholder:text-fg-2"
                 bind:value={search}
-                placeholder="Rechercher un prompt.."
+                placeholder="Search prompts..."
             />
             <button class="btn icon shrink-0" onclick={() => (creating = true)}>
                 <CrossIcon rotate={45} --size="1rem" />
             </button>
         </div>
-        <div class="flex h-96 w-full flex-col gap-2 overflow-y-auto pt-4">
+        <div
+            class="grid max-h-[70vh] grid-cols-1 gap-4 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3"
+        >
             {#each filtered_prompts as prompt (prompt.id)}
-                <div class="flex w-full items-center gap-4">
-                    <button
-                        class="btn ghost grow text-start!"
-                        style:height="unset"
-                        onclick={() => (editing_prompt = {...prompt})}
-                    >
-                        <div class="flex w-full min-w-0 flex-col p-2">
-                            <h1 class="truncate font-medium!">{prompt.title}</h1>
-                            <p class="w-full truncate font-normal! text-fg-2">
-                                {prompt.prompt.slice(0, 60)}
-                                {#if prompt.prompt.length > 60}…{/if}
-                            </p>
-                        </div>
-                    </button>
+                <div class="flex flex-col gap-3 rounded-xl border border-bg-2 bg-bg-1 p-4">
+                    <div class="flex items-start justify-between gap-2">
+                        <h2 class="text-base leading-tight font-semibold">{prompt.title}</h2>
+                        <button
+                            class="btn ghost icon shrink-0"
+                            onclick={() => (editing_prompt = {...prompt})}
+                        >
+                            <PenIcon --size="1rem" />
+                        </button>
+                    </div>
+                    <p class="line-clamp-3 grow text-sm text-fg-2">
+                        {prompt.prompt}
+                    </p>
                     {#if can_generate}
-                        <button class="btn icon shrink-0" onclick={() => ongenerate(prompt)}>
+                        <button class="btn w-fit" onclick={() => ongenerate(prompt)}>
                             <SparklesIcon --size="1rem" />
+                            Générer
                         </button>
                     {/if}
                 </div>

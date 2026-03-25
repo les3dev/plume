@@ -92,7 +92,6 @@
                 > pour enregistrer vos clés API localement.
             </div>
         </div>
-        <!-- If no audio_path, need to record or upload audio first -->
     {:else if meeting.audio_path === undefined}
         <div class="flex grow flex-col items-center justify-center gap-14">
             <SuperRecorder
