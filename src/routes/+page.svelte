@@ -1,213 +1,63 @@
 <script lang="ts">
-    import Dialog from '$lib/widgets/Dialog.svelte';
-    import {get_settings_context} from '$lib/settings/settings_context.svelte';
-    import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
-    import Upload from '$lib/upload/Upload.svelte';
-    import CopyIcon from '$lib/icons/CopyIcon.svelte';
-    import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
-    import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
-    import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
-    import {writeFile} from '@tauri-apps/plugin-fs';
-    import {save} from '@tauri-apps/plugin-dialog';
-    import CrossIcon from '$lib/icons/CrossIcon.svelte';
-    import {open} from '@tauri-apps/plugin-shell';
-    import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
-    import PromptDialog from '$lib/prompt/PromptDialog.svelte';
-    import {get_prompt_context} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
-    import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
-    import PenIcon from '$lib/icons/PenIcon.svelte';
-    import MarkdownResult from '$lib/prompt/MarkdownResult.svelte';
-    import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
+    import {readDir} from '@tauri-apps/plugin-fs';
+    import CrossIcon from '$lib/icons/CrossIcon.svelte';
+    import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
+    import {get_settings_context} from '$lib/settings/settings_context.svelte';
+    import {catch_error} from '$lib/helpers/catch_error';
 
-    const meeting = get_meeting_context();
+    let search = $state('');
+
     const settings = get_settings_context();
-    const prompts = get_prompt_context();
 
-    let is_prompts_open = $state(false);
-    let mail_error = $state<string>();
-    let is_recording = $state(false);
+    let folders = $state<{name: string; path: string}[]>([]);
 
-    const copy = async () => {
-        if (meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0) {
-            await navigator.clipboard.writeText(
-                meeting.ai_tabs[meeting.selected_ai_tab].ai_generation,
-            );
-        } else {
-            await navigator.clipboard.writeText(meeting.transcript_text);
+    $effect(() => {
+        if (settings.save_path) {
+            load_folders(settings.save_path);
         }
-    };
+    });
 
-    const download = async () => {
-        const path = await save({
-            filters: [{name: 'Text', extensions: ['txt']}],
-            defaultPath: 'transcript.txt',
-        });
-        if (!path) return;
-        const encoder = new TextEncoder();
-        const content =
-            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
-                ? meeting.ai_tabs[meeting.selected_ai_tab].ai_generation
-                : meeting.transcript_text;
-        await writeFile(path, encoder.encode(content));
-    };
-
-    const open_mail = (body: string) => {
-        if (!settings.mail_client) {
-            mail_error = "Vous n'avez pas choisis de mail par défaut";
+    let error_message = $state('');
+    async function load_folders(path: string) {
+        const entries = await catch_error(() => readDir(path));
+        if (entries instanceof Error) {
+            error_message = entries.message;
             return;
         }
-        const urls = {
-            mailto: `mailto:?subject=Compte rendu&body=${encodeURIComponent(body)}`,
-            gmail: `https://mail.google.com/mail/?view=cm&body=${encodeURIComponent(body)}`,
-            outlook: `https://outlook.office.com/mail/deeplink/compose?body=${encodeURIComponent(body)}`,
-        };
-        open(urls[settings.mail_client]);
-    };
+        folders = entries
+            .filter((entry) => entry.isDirectory)
+            .map((entry) => ({
+                name: entry.name,
+                path: `${path}/${entry.name}`,
+            }));
+    }
 </script>
 
 <div class="flex h-screen flex-col">
     <header class="flex items-center gap-2 p-4 pb-2">
-        <button class="btn ghost icon" onclick={meeting.reset}>
-            <CrossIcon --size="1.2rem" />
-        </button>
-        <input type="text" bind:value={meeting.meeting_name} class="bg-transparent outline-none" />
-        {#if meeting.audio_asset_path}
-            <audio controls src={meeting.audio_asset_path} class="ms-auto h-10"></audio>
-        {:else}
-            <button class="btn ghost ms-auto" onclick={() => (is_prompts_open = true)}
-                ><PenIcon --size="1.2rem" /> Editer les prompts</button
-            >
-        {/if}
+        <input
+            type="text"
+            bind:value={search}
+            placeholder="Rechercher…"
+            class="grow border-none! bg-transparent!"
+        />
+        <button class="btn ghost icon" onclick={() => goto(`/meeting/Sans titre`)}
+            ><CrossIcon rotate={45} /></button
+        >
         <button class="btn ghost icon" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </header>
-
-    {#if !settings.deepgram_key || !settings.openrouter_key}
-        <div class="flex h-full items-center justify-center">
-            <div class="max-w-150 rounded-xl border border-dotted p-4 text-center">
-                Vos clés API OpenRouter et Deepgram ne sont pas encore configurées. Utilisez le <span
-                    class="text-primary">bouton Paramètres</span
-                > pour enregistrer vos clés API localement.
-            </div>
-        </div>
-    {:else if meeting.audio_asset_path === undefined}
-        <div class="flex grow flex-col items-center justify-center gap-14">
-            <SuperRecorder
-                onstart={() => (is_recording = true)}
-                onfinish={(raw_path, asset_path, start_time, duration) => {
-                    meeting.start_recording_time = start_time;
-                    meeting.recording_duration = duration;
-                    meeting.start_transcript(raw_path, asset_path);
-                    is_recording = false;
-                }}
-            />
-            {#if !is_recording}
-                <Upload
-                    onfile={(raw_path, asset_path, start_time, duration) => {
-                        meeting.start_recording_time = start_time;
-                        meeting.recording_duration = duration;
-                        meeting.start_transcript(raw_path, asset_path);
-                    }}
-                />
-            {/if}
-        </div>
-    {:else if meeting.transcript instanceof Error}
-        <div class="m-auto text-error">Erreur de transcript: {meeting.transcript.message}</div>
-    {:else if meeting.transcript.length === 0}
-        <div class="flex grow flex-col items-center justify-center gap-4">
-            <ProgressCircle --color="var(--color-primary)" show_value={false} infinite={true} />
-            <div>Transcription en cours ({meeting.transcript_timer.value})…</div>
-        </div>
-    {:else}
-        <div class="flex grow flex-col overflow-hidden">
-            <div class="flex gap-2 px-4 pb-2">
-                <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                <button class="btn ghost" onclick={download}
-                    ><DownloadIcon --size="1.2rem" />Télécharger</button
-                >
-
-                {#if meeting.ai_tabs.length > 0}
-                    {@const current_generation = meeting.ai_tabs[meeting.selected_ai_tab]}
-                    {@const prompt = prompts.prompts.find((p) => p.id === current_generation.id)}
-                    {#if prompt?.title === 'Email' && settings.mail_client && current_generation.ai_generation}
-                        <button
-                            class="btn ghost"
-                            onclick={() => open_mail(current_generation.ai_generation)}
-                        >
-                            <PaperPlaneIcon --size="1.2rem" />Envoyer
-                        </button>
-                        {#if mail_error}
-                            <p class="text-red-400 text-sm">{mail_error}</p>
-                        {/if}
-                    {/if}
-                {/if}
-            </div>
-            <div class="flex grow flex-col overflow-auto">
-                {#if meeting.tab_type === 'transcript'}
-                    <TranscriptEditor
-                        transcript={meeting.transcript}
-                        duration={meeting.transcript_timer.value}
-                    />
-                {:else if meeting.tab_type === 'ai'}
-                    {#if meeting.ai_tabs.length > 0}
-                        <MarkdownResult
-                            markdown={meeting.ai_tabs[meeting.selected_ai_tab].ai_generation}
-                        />
-                    {:else if meeting.is_generating}
-                        <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
-                    {/if}
-                {/if}
-            </div>
-        </div>
-        <div class="shrink-0 border-bg-2 p-4">
-            <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-4">
-                <button
-                    class="btn {meeting.tab_type === 'transcript' ? 'secondary' : 'ghost'}"
-                    onclick={() => (meeting.tab_type = 'transcript')}
-                >
-                    Transcription
+    <div class="flex flex-col gap-4 px-4">
+        {#if folders.length === 0}
+            <p>No folders found.</p>
+        {:else}
+            {#each folders as folder}
+                <button class="btn ghost" onclick={() => goto(`/meeting/${folder.name}`)}>
+                    {folder.name}
                 </button>
-                {#each meeting.ai_tabs as tab, i}
-                    {@const prompt = prompts.prompts.find((p) => p.id === tab.id)}
-                    {#if prompt}
-                        <button
-                            class="btn {meeting.selected_ai_tab === i && meeting.tab_type === 'ai'
-                                ? 'secondary'
-                                : 'ghost'}"
-                            onclick={() => {
-                                meeting.selected_ai_tab = i;
-                                meeting.tab_type = 'ai';
-                            }}
-                        >
-                            {prompt.title}
-                        </button>
-                    {/if}
-                {/each}
-                <button
-                    class="btn ghost icon"
-                    disabled={meeting.is_generating}
-                    onclick={() => (is_prompts_open = true)}
-                >
-                    <CrossIcon rotate={45} --size="1.2rem" />
-                </button>
-            </div>
-        </div>
-    {/if}
+            {/each}
+        {/if}
+    </div>
 </div>
-
-<Dialog
-    is_open={is_prompts_open}
-    onrequestclose={() => (is_prompts_open = false)}
-    position="center"
->
-    <PromptDialog
-        used_prompts={meeting.ai_tabs}
-        can_generate={meeting.audio_asset_path !== undefined}
-        ongenerate={(prompt) => {
-            meeting.generate(prompt);
-            is_prompts_open = false;
-        }}
-    />
-</Dialog>
