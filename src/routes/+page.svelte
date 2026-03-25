@@ -29,7 +29,13 @@
     let is_recording = $state(false);
 
     const copy = async () => {
-        await navigator.clipboard.writeText(meeting.transcript_text);
+        if (meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0) {
+            await navigator.clipboard.writeText(
+                meeting.ai_tabs[meeting.selected_ai_tab].ai_generation,
+            );
+        } else {
+            await navigator.clipboard.writeText(meeting.transcript_text);
+        }
     };
 
     const download = async () => {
@@ -39,7 +45,11 @@
         });
         if (!path) return;
         const encoder = new TextEncoder();
-        await writeFile(path, encoder.encode(meeting.transcript_text));
+        const content =
+            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
+                ? meeting.ai_tabs[meeting.selected_ai_tab].ai_generation
+                : meeting.transcript_text;
+        await writeFile(path, encoder.encode(content));
     };
 
     const open_mail = (body: string) => {
@@ -146,7 +156,7 @@
                         <MarkdownResult
                             markdown={meeting.ai_tabs[meeting.selected_ai_tab].ai_generation}
                         />
-                    {:else if meeting.is_generating}et 
+                    {:else if meeting.is_generating}
                         <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
                     {/if}
                 {/if}
