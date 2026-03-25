@@ -72,8 +72,8 @@
             <CrossIcon --size="1.2rem" />
         </button>
         <input type="text" bind:value={meeting.meeting_name} class="bg-transparent outline-none" />
-        {#if meeting.audio_path !== undefined}
-            <audio controls src={meeting.audio_path} class="ms-auto h-10"></audio>
+        {#if meeting.audio_asset_path}
+            <audio controls src={meeting.audio_asset_path} class="ms-auto h-10"></audio>
         {:else}
             <button class="btn ghost ms-auto" onclick={() => (is_prompts_open = true)}
                 ><PenIcon --size="1.2rem" /> Editer les prompts</button
@@ -92,7 +92,7 @@
                 > pour enregistrer vos clés API localement.
             </div>
         </div>
-    {:else if meeting.audio_path === undefined}
+    {:else if meeting.audio_asset_path === undefined}
         <div class="flex grow flex-col items-center justify-center gap-14">
             <SuperRecorder
                 onstart={() => (is_recording = true)}
@@ -204,7 +204,7 @@
 >
     <PromptDialog
         used_prompts={meeting.ai_tabs}
-        can_generate={meeting.audio_path !== undefined}
+        can_generate={meeting.audio_asset_path !== undefined}
         ongenerate={(prompt) => {
             meeting.generate(prompt);
             is_prompts_open = false;

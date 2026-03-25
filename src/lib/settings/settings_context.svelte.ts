@@ -10,6 +10,7 @@ class SettingsContext extends StoreContext {
     deepgram_key = $state<string>();
     model = $state<string>(default_model);
     mail_client = $state<MailClient | undefined>(undefined);
+    save_path = $state<string | undefined>(undefined);
 
     #color_scheme = $state<'light' | 'dark'>('dark');
     #match_light = matchMedia('(prefers-colors-scheme: light)');
@@ -58,6 +59,14 @@ class SettingsContext extends StoreContext {
         this.deepgram_key = (await this.get_from_store<string>('deepgram_key')) ?? undefined;
         this.mail_client = await this.get_from_store<MailClient>('mail_client');
         this.model = (await this.get_from_store<string>('model')) ?? default_model;
+        this.save_path = await this.get_from_store<string>('save_path');
+    };
+
+    save_save_path = async (path: string | undefined) => {
+        if (!browser) return;
+        this.save_path = path;
+        await this.set_to_store('save_path', path);
+        await this.save_store();
     };
 
     save_openrouter_key = async (key: string | undefined) => {

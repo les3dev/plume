@@ -5,17 +5,57 @@
     import InfoIcon from '$lib/icons/InfoIcon.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
     import type {MailClient} from '$lib/settings/settings_context.svelte';
+    import {open as open_dialog} from '@tauri-apps/plugin-dialog';
+    import {appDataDir, homeDir} from '@tauri-apps/api/path';
 
     const settings = get_settings_context();
     let openrouter_key = $state('');
     let deepgram_key = $state('');
     let model = $state(settings.model);
+    let save_path = $state('');
+    let default_save_path = $state('');
 
     $effect(() => {
         openrouter_key = settings.openrouter_key ?? '';
         deepgram_key = settings.deepgram_key ?? '';
         model = settings.model;
     });
+
+    $effect(() => {
+        save_path = settings.save_path ?? '';
+    });
+
+    $effect(() => {
+        (async () => {
+            if (!settings.save_path) {
+                default_save_path = await appDataDir();
+            }
+        })();
+    });
+
+    const is_path_valid = async (path: string): Promise<boolean> => {
+        const home = await homeDir();
+        return path.startsWith(home);
+    };
+
+    const browse_save_path = async () => {
+        error_message = '';
+        const selected = await open_dialog({
+            directory: true,
+            multiple: false,
+            defaultPath: default_save_path || undefined,
+        });
+        if (selected && typeof selected === 'string') {
+            if (!(await is_path_valid(selected))) {
+                error_message = 'Le dossier doit être dans votre dossier personnel ($HOME)';
+                return;
+            }
+            save_path = selected;
+            await settings.save_save_path(selected);
+        }
+    };
+
+    let error_message = $state('');
 </script>
 
 <div class="flex h-screen flex-col">
@@ -102,6 +142,28 @@
                         <option value="gmail">Gmail</option>
                         <option value="outlook">Outlook</option>
                     </select>
+                </div>
+                <div class="flex flex-col gap-3 border-b border-bg-2 pb-6">
+                    <label class="text-sm font-medium" for="save_path">Dossier sauvegarde</label>
+                    <input
+                        id="save_path"
+                        type="text"
+                        placeholder={settings.save_path || default_save_path}
+                        bind:value={save_path}
+                    />
+                    <div class="flex gap-2">
+                        <button class="btn" onclick={browse_save_path}>Parcourir</button>
+                        <button
+                            class="btn secondary"
+                            onclick={() => {
+                                save_path = '';
+                                settings.save_save_path(undefined);
+                            }}>Réinitialiser</button
+                        >
+                    </div>
+                    {#if error_message}
+                        <p class="text-xs text-error">{error_message}</p>
+                    {/if}
                 </div>
                 <div class="flex items-center justify-between gap-3">
                     <span class="text-sm font-medium">Apparence</span>

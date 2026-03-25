@@ -27,6 +27,28 @@
             "allow": [
                 {
                     "path": "$APPDATA/**"
+                },
+                {
+                    "path": "$HOME/**"
+                }
+            ]
+        },
+        {
+            "identifier": "fs:allow-read-file",
+            "allow": [
+                {
+                    "path": "$APPDATA/**"
+                },
+                {
+                    "path": "$HOME/**"
+                }
+            ]
+        },
+        {
+            "identifier": "fs:allow-read-dir",
+            "allow": [
+                {
+                    "path": "$HOME/**"
                 }
             ]
         },

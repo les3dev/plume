@@ -9,7 +9,8 @@ import {setContext, getContext} from 'svelte';
 
 interface Meeting {
     name: string;
-    audio_path: string;
+    audio_raw_path: string;
+    audio_asset_path: string;
     transcript: TranscriptBlock[];
     start_recording_time: string;
     recording_duration: string;
@@ -20,7 +21,8 @@ class MeetingContext extends StoreContext {
     #settings = get_settings_context();
 
     meeting_name = $state('Nouvelle réunion');
-    audio_path = $state<string>();
+    audio_raw_path = $state<string>();
+    audio_asset_path = $state<string>();
     transcript = $state<TranscriptBlock[] | Error>([]);
     start_recording_time = $state<Date>();
     recording_duration = $state<string>();
@@ -46,7 +48,8 @@ class MeetingContext extends StoreContext {
         const stored_meeting = await this.get_from_store<Meeting>('meeting');
         if (stored_meeting) {
             this.meeting_name = stored_meeting.name;
-            this.audio_path = stored_meeting.audio_path;
+            this.audio_raw_path = stored_meeting.audio_raw_path;
+            this.audio_asset_path = stored_meeting.audio_asset_path;
             this.transcript = stored_meeting.transcript;
             this.start_recording_time = new Date(stored_meeting.start_recording_time);
             this.recording_duration = stored_meeting.recording_duration;
@@ -58,13 +61,15 @@ class MeetingContext extends StoreContext {
             !this.start_recording_time ||
             this.transcript instanceof Error ||
             !this.recording_duration ||
-            !this.audio_path
+            !this.audio_raw_path ||
+            !this.audio_asset_path
         ) {
             return;
         }
         await this.set_to_store<Meeting>('meeting', {
             name: this.meeting_name,
-            audio_path: this.audio_path,
+            audio_raw_path: this.audio_raw_path,
+            audio_asset_path: this.audio_asset_path,
             transcript: this.transcript,
             start_recording_time: this.start_recording_time.toISOString(),
             recording_duration: this.recording_duration,
@@ -75,7 +80,8 @@ class MeetingContext extends StoreContext {
 
     start_transcript = async (raw_path: string, asset_path: string) => {
         this.transcript_timer.start();
-        this.audio_path = asset_path;
+        this.audio_raw_path = raw_path;
+        this.audio_asset_path = asset_path;
         if (this.#settings.deepgram_key) {
             this.transcript = await generate_transcript(raw_path, this.#settings.deepgram_key);
         }
@@ -114,7 +120,8 @@ class MeetingContext extends StoreContext {
     };
 
     reset = async () => {
-        this.audio_path = undefined;
+        this.audio_raw_path = undefined;
+        this.audio_asset_path = undefined;
         this.transcript = [];
         this.ai_tabs = [];
         this.selected_ai_tab = 0;

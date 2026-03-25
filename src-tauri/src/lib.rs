@@ -11,10 +11,6 @@ use tauri::{
     menu::{Menu, MenuItem},
 };
 
-use tauri_plugin_positioner::{Position, WindowExt}; // Position = les positions prédéfinies (TrayCenter, TopRight...)
-                                                     // WindowExt = ajoute la méthode move_window() aux fenêtres
-use std::sync::Mutex;
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
