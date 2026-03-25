@@ -3,7 +3,7 @@
     import MicIcon from '$lib/icons/MicIcon.svelte';
     import StopIcon from '$lib/icons/StopIcon.svelte';
     import {convertFileSrc, invoke} from '@tauri-apps/api/core';
-    import {listen, type UnlistenFn} from '@tauri-apps/api/event';
+    import {emit, listen, type UnlistenFn} from '@tauri-apps/api/event';
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import {onDestroy} from 'svelte';
@@ -26,7 +26,6 @@
     };
     let {onfinish, onstart}: Props = $props();
 
-    let audio_path = $state<string>();
     let error_message = $state<string>();
     let capture_state = $state<'initial' | 'capturing' | 'saving'>('initial');
     let timer = reactive_timer();
@@ -38,10 +37,12 @@
         capture_state = 'saving';
         const current_path = await catch_error(() => invoke<string>('stop_capture'));
         capture_state = 'initial';
+        await emit('recording-started');
         if (current_path instanceof Error) {
             error_message = error_msg
                 ? `Capture interrupted: ${error_msg}, save failed: ${current_path.message}`
                 : current_path.message;
+            await emit('recording-stopped');
             return;
         }
         const asset_path = catch_error(() => convertFileSrc(current_path));
@@ -49,14 +50,17 @@
             error_message = error_msg
                 ? `Capture interrupted: ${error_msg}, convert failed: ${asset_path.message}`
                 : asset_path.message;
+            await emit('recording-stopped');
             return;
         }
         if (error_msg) {
             error_message = `Capture interrupted: ${error_msg}`;
+            await emit('recording-stopped');
             return;
         }
         if (timer.start_time) {
             onfinish(current_path, asset_path, timer.start_time, timer.value);
+            await emit('recording-stopped');
         }
     };
 
@@ -84,10 +88,26 @@
             timer.start();
             capture_state = 'capturing';
             onstart();
+            await emit('recording-started');
         } else if (capture_state === 'capturing') {
             await save_capture();
         }
     };
+
+    $effect(() => {
+        const unlisten_start = listen('tray-start-recording', () => {
+            if (capture_state === 'initial') toggle_capture();
+        });
+
+        const unlisten_stop = listen('tray-stop-recording', () => {
+            if (capture_state === 'capturing') toggle_capture();
+        });
+
+        return async () => {
+            (await unlisten_start)();
+            (await unlisten_stop)();
+        };
+    });
 </script>
 
 <div class="flex flex-col items-center gap-10">

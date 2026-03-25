@@ -19,7 +19,7 @@
                 "title": "plume",
                 "width": 600,
                 "height": 800,
-                "visible": false
+                "visible": true
             }
         ],
         "security": {

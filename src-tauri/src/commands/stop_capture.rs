@@ -1,4 +1,5 @@
 use crate::audio::write_wav::write_wav;
+use audio_capture::CaptureError;
 use crate::capture_state::{CaptureState, TARGET_RATE};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
@@ -11,7 +12,11 @@ pub async fn stop_capture(
     {
         let mut guard = state.sys_engine.lock().unwrap();
         if let Some(engine) = guard.as_mut() {
-            engine.stop_capture().map_err(|e| e.to_string())?;
+            engine.stop_capture().map_err(|e: CaptureError| e.to_string())?;
+            *guard = None;
+        } else {
+            return Err("Not capturing".into());
+
         }
         *guard = None;
     }

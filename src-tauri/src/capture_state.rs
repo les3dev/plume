@@ -1,5 +1,5 @@
 use crate::audio::audio_buffer::AudioBuffer;
-use crate::AudioCapture;
+use audio_capture::AudioCapture;
 use cpal::Stream;
 use std::sync::{Arc, Mutex}; // Adjust based on where AudioCapture is defined
 use tauri::AppHandle;
