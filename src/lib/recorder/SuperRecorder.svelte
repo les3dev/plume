@@ -118,7 +118,7 @@
 </div>
 
 {#if error_message !== undefined}
-    <div class="text-error">{error_message}</div>
+    <div class="p-4 text-center text-error">{error_message}</div>
 {/if}
 
 <style>

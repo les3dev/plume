@@ -4,16 +4,15 @@ import AVFoundation
 import CoreAudio
 
 // MARK: - C-compatible callback types
-// Called from Rust with: audio data pointer, frame count, sample rate, channel count
 public typealias AudioDataCallback = @convention(c) (
-    UnsafePointer<Float>?,  // interleaved float samples
-    UInt32,                  // frame count
-    Double,                  // sample rate
-    UInt32                   // channel count
+    UnsafePointer<Float>?,
+    UInt32,
+    Double,
+    UInt32
 ) -> Void
 
 public typealias AudioErrorCallback = @convention(c) (
-    UnsafePointer<CChar>?  // error message (null-terminated)
+    UnsafePointer<CChar>?
 ) -> Void
 
 // MARK: - Capture Engine
@@ -29,95 +28,55 @@ public typealias AudioErrorCallback = @convention(c) (
     private var stopping = false
     private var _captureStartTime: Date?
 
+    // Reconnect state
+    private var reconnectTask: Task<Void, Never>?
+    private let maxReconnectAttempts = 5
+    private let reconnectDelaySeconds: Double = 2.0
+
     @objc public override init() {
         super.init()
     }
 
-    /// Start capturing system audio (all apps, no microphone).
+    // MARK: - Public API
+
     @objc public func startCapture(
         callback: @escaping AudioDataCallback,
         completion: @escaping (String?) -> Void
     ) {
         stateQueue.async { [weak self] in
-            guard let self = self else { return }
-            
+            guard let self else { return }
+
             if self.isCapturing {
                 completion("Already capturing")
                 return
             }
-            
             if self.stopping {
                 completion("Stop in progress")
                 return
             }
 
             self.callback = callback
-            let capturedCallback = callback
-            
+
             Task.detached(priority: .userInitiated) { [weak self] in
-                guard let self = self else { return }
-                
-                do {
-                    let available = try await SCShareableContent.excludingDesktopWindows(
-                        false, onScreenWindowsOnly: false
-                    )
-
-                    guard let display = available.displays.first else {
-                        self.stateQueue.async {
-                            self.callback = nil
-                        }
-                        completion("No display found")
-                        return
-                    }
-
-                    let filter = SCContentFilter(
-                        display: display,
-                        excludingApplications: [],
-                        exceptingWindows: []
-                    )
-
-                    let config = SCStreamConfiguration()
-                    config.capturesAudio = true
-                    config.excludesCurrentProcessAudio = false
-                    config.sampleRate = 48000
-                    config.channelCount = 2
-                    config.width = 2
-                    config.height = 2
-                    config.minimumFrameInterval = CMTime(value: 1, timescale: 1)
-
-                    let output = AudioStreamOutput(callback: capturedCallback, engine: self)
-                    let stream = SCStream(filter: filter, configuration: config, delegate: output)
-                    try stream.addStreamOutput(
-                        output,
-                        type: .audio,
-                        sampleHandlerQueue: .global(qos: .userInteractive)
-                    )
-                    try await stream.startCapture()
-
-                    self.stateQueue.async {
-                        self.streamOutput = output
-                        self.stream = stream
-                        self.isCapturing = true
-                        self._captureStartTime = Date()
-                    }
-                    
+                guard let self else { return }
+                if let error = await self.buildAndStartStream() {
+                    self.stateQueue.sync { self.callback = nil }
+                    completion(error)
+                } else {
                     completion(nil)
-
-                } catch {
-                    self.stateQueue.async {
-                        self.callback = nil
-                    }
-                    completion(error.localizedDescription)
                 }
             }
         }
     }
 
-    /// Stop capturing system audio.
     @objc public func stopCapture(completion: @escaping (String?) -> Void) {
         stateQueue.async { [weak self] in
-            guard let self = self else { return }
-            
+            guard let self else { return }
+
+            // Cancel any in-progress reconnect first
+            self.reconnectTask?.cancel()
+            self.reconnectTask = nil
+
             guard self.isCapturing, let stream = self.stream else {
                 completion("Not currently capturing")
                 return
@@ -133,25 +92,19 @@ public typealias AudioErrorCallback = @convention(c) (
                 } catch {
                     print("[AudioCapture] Error stopping stream: \(error)")
                 }
-                
                 self?.stateQueue.async {
                     self?.stream = nil
                     self?.streamOutput = nil
                     self?.callback = nil
                     self?.stopping = false
                 }
-                
                 completion(nil)
             }
         }
     }
 
     @objc public var capturing: Bool {
-        var result = false
-        stateQueue.sync {
-            result = isCapturing
-        }
-        return result
+        stateQueue.sync { isCapturing }
     }
 
     @objc public func setErrorCallback(_ callback: @escaping AudioErrorCallback) {
@@ -160,24 +113,126 @@ public typealias AudioErrorCallback = @convention(c) (
         }
     }
 
-    func notifyError(_ message: String) {
-        let capturedCallback = self.errorCallback
-        let capturedMessage = strdup(message)
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let callback = capturedCallback {
-                callback(UnsafePointer(capturedMessage))
+    // MARK: - Internal
+
+    /// Builds a fresh SCStream and starts it. Returns an error string or nil on success.
+    private func buildAndStartStream() async -> String? {
+        do {
+            let available = try await SCShareableContent.excludingDesktopWindows(
+                false, onScreenWindowsOnly: false
+            )
+            guard let display = available.displays.first else {
+                return "No display found"
             }
+
+            let filter = SCContentFilter(
+                display: display,
+                excludingApplications: [],
+                exceptingWindows: []
+            )
+
+            let config = SCStreamConfiguration()
+            config.capturesAudio = true
+            config.excludesCurrentProcessAudio = false
+            config.sampleRate = 48000
+            config.channelCount = 2
+            config.width = 2
+            config.height = 2
+            config.minimumFrameInterval = CMTime(value: 1, timescale: 1)
+
+            let capturedCallback: AudioDataCallback = stateQueue.sync { self.callback! }
+            let output = AudioStreamOutput(callback: capturedCallback, engine: self)
+            let stream = SCStream(filter: filter, configuration: config, delegate: output)
+
+            try stream.addStreamOutput(
+                output,
+                type: .audio,
+                sampleHandlerQueue: .global(qos: .userInteractive)
+            )
+
+            // ScreenCaptureKit is a screen capture API at its core. Even when only
+            // capturing audio, it tracks both audio and video stream activity internally.
+            // Registering a screen output handler — even though we discard every frame —
+            // prevents SCKit from considering the stream stalled and tearing it down.
+            try stream.addStreamOutput(
+                output,
+                type: .screen,
+                sampleHandlerQueue: .global(qos: .background)
+            )
+
+            try await stream.startCapture()
+
+            stateQueue.sync {
+                self.streamOutput = output
+                self.stream = stream
+                self.isCapturing = true
+                self._captureStartTime = Date()
+            }
+
+            return nil
+        } catch {
+            return error.localizedDescription
         }
     }
 
-    func resetState() {
-        stateQueue.async { [weak self] in
-            self?.stream = nil
-            self?.streamOutput = nil
-            self?.isCapturing = false
-            self?.callback = nil
-            self?.stopping = false
-            self?._captureStartTime = nil
+    /// Called by AudioStreamOutput when SCKit kills the stream unexpectedly.
+    /// Attempts to transparently reconnect so Rust/Tauri never sees the interruption.
+    /// Only forwards an error to the callback if all reconnect attempts fail.
+    func handleStreamError(_ message: String) {
+        // Reset state synchronously so startCapture is valid again immediately
+        stateQueue.sync {
+            self.stream = nil
+            self.streamOutput = nil
+            self.isCapturing = false
+            self.stopping = false
+            self._captureStartTime = nil
+        }
+
+        print("[AudioCapture] Stream interrupted: \(message). Attempting reconnect...")
+
+        reconnectTask = Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+
+            for attempt in 1...self.maxReconnectAttempts {
+                // Bail if stopCapture() was called while we were retrying
+                if Task.isCancelled { return }
+
+                // Back off between attempts
+                if attempt > 1 {
+                    try? await Task.sleep(nanoseconds: UInt64(self.reconnectDelaySeconds * Double(attempt) * 1_000_000_000))
+                } else {
+                    // Short initial delay to let the system settle
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+
+                if Task.isCancelled { return }
+
+                // Check we still have a callback (i.e. caller hasn't explicitly stopped)
+                let hasCallback = self.stateQueue.sync { self.callback != nil }
+                guard hasCallback else { return }
+
+                print("[AudioCapture] Reconnect attempt \(attempt)/\(self.maxReconnectAttempts)...")
+
+                if let error = await self.buildAndStartStream() {
+                    print("[AudioCapture] Reconnect attempt \(attempt) failed: \(error)")
+                    continue
+                }
+
+                print("[AudioCapture] Reconnected successfully on attempt \(attempt)")
+                return
+            }
+
+            // All attempts failed — notify the frontend
+            print("[AudioCapture] All reconnect attempts failed, notifying error callback")
+            self.notifyError("Stream interrupted and could not reconnect: \(message)")
+        }
+    }
+
+    func notifyError(_ message: String) {
+        let capturedCallback = errorCallback
+        let capturedMessage = strdup(message)
+        DispatchQueue.global(qos: .userInitiated).async {
+            capturedCallback?(UnsafePointer(capturedMessage))
         }
     }
 }
@@ -188,15 +243,14 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
 
     private let callback: AudioDataCallback
     private weak var engine: AudioCaptureEngine?
-    private let startTime: Date
 
     init(callback: AudioDataCallback, engine: AudioCaptureEngine) {
         self.callback = callback
         self.engine = engine
-        self.startTime = Date()
     }
 
-    // Called by ScreenCaptureKit for every audio buffer
+    // Video frames are immediately discarded — registered only to keep SCKit
+    // from considering the stream stalled (see buildAndStartStream comment).
     func stream(
         _ stream: SCStream,
         didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
@@ -205,14 +259,6 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
         guard type == .audio else { return }
         guard sampleBuffer.isValid else { return }
 
-        // TEST: Uncomment to randomly simulate stream errors after 10 seconds
-        // if Int.random(in: 1...100) <= 5,
-        //    Date().timeIntervalSince(startTime) >= 10 {
-        //     engine?.notifyError("Stream was stopped by the system (TEST)")
-        //     return
-        // }
-
-        // Extract format description
         guard let formatDesc = sampleBuffer.formatDescription,
               let asbd = formatDesc.audioStreamBasicDescription else { return }
 
@@ -222,23 +268,17 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
 
         guard frameCount > 0, channelCount > 0 else { return }
 
-        // Calculate the correct size for AudioBufferList with `channelCount` buffers.
         let baseSize = MemoryLayout<AudioBufferList>.offset(of: \AudioBufferList.mBuffers)!
         let bufferSize = MemoryLayout<AudioBuffer>.stride * Int(channelCount)
         let audioBufferListSize = baseSize + bufferSize
 
-        // Allocate on the heap with the correct size
         let audioBufferListPtr = UnsafeMutableRawPointer.allocate(
             byteCount: audioBufferListSize,
             alignment: MemoryLayout<AudioBufferList>.alignment
         )
         defer { audioBufferListPtr.deallocate() }
 
-        let typedPtr = audioBufferListPtr.bindMemory(
-            to: AudioBufferList.self,
-            capacity: 1
-        )
-
+        let typedPtr = audioBufferListPtr.bindMemory(to: AudioBufferList.self, capacity: 1)
         var blockBufferOut: CMBlockBuffer?
 
         let status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
@@ -254,27 +294,17 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
 
         guard status == noErr else { return }
 
-        // Access the buffers safely — non-interleaved: one AudioBuffer per channel
         let numBuffers = Int(typedPtr.pointee.mNumberBuffers)
         guard numBuffers > 0 else { return }
 
-        // Convert non-interleaved (planar) Float32 → interleaved Float32
-        let totalSamples = Int(frameCount) * numBuffers
-        var interleaved = [Float](repeating: 0, count: totalSamples)
+        var interleaved = [Float](repeating: 0, count: Int(frameCount) * numBuffers)
 
-        // Use withUnsafePointer to keep the pointer valid for the full scope
         withUnsafePointer(to: &typedPtr.pointee.mBuffers) { mBuffersPtr in
-            let buffers = UnsafeBufferPointer<AudioBuffer>(
-                start: mBuffersPtr,
-                count: numBuffers
-            )
+            let buffers = UnsafeBufferPointer<AudioBuffer>(start: mBuffersPtr, count: numBuffers)
             for frame in 0..<Int(frameCount) {
                 for ch in 0..<numBuffers {
                     guard let dataPtr = buffers[ch].mData else { continue }
-                    let channelData = dataPtr.bindMemory(
-                        to: Float.self,
-                        capacity: Int(frameCount)
-                    )
+                    let channelData = dataPtr.bindMemory(to: Float.self, capacity: Int(frameCount))
                     interleaved[frame * numBuffers + ch] = channelData[frame]
                 }
             }
@@ -286,9 +316,7 @@ private class AudioStreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @un
     }
 
     func stream(_ stream: SCStream, didStopWithError error: Error) {
-        let errorMessage = error.localizedDescription
-        print("[AudioCapture] Stream stopped with error: \(errorMessage)")
-        engine?.notifyError(errorMessage)
-        engine?.resetState()
+        print("[AudioCapture] Stream stopped with error: \(error.localizedDescription)")
+        engine?.handleStreamError(error.localizedDescription)
     }
 }
