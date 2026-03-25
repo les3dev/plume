@@ -7,7 +7,9 @@
     import type {MailClient} from '$lib/settings/settings_context.svelte';
     import {open as open_dialog} from '@tauri-apps/plugin-dialog';
     import {appDataDir, homeDir} from '@tauri-apps/api/path';
+    import {get_i18n_context} from '$lib/i18n/context.svelte';
 
+    const i18n = get_i18n_context();
     const settings = get_settings_context();
     let openrouter_key = $state('');
     let deepgram_key = $state('');
@@ -63,7 +65,7 @@
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon --size="1.2rem" />
         </button>
-        <h1 class="flex-1 text-center text-xl">Paramètres</h1>
+        <h1 class="flex-1 text-center text-xl">{i18n.t('Paramètres')}</h1>
         <button class="btn ghost icon">
             <InfoIcon --size="1.2rem" />
         </button>

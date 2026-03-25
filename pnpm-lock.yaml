@@ -23,6 +23,9 @@ importers:
       '@fontsource/space-mono':
         specifier: ^5.2.9
         version: 5.2.9
+      '@les3dev/i18n':
+        specifier: ^0.1.0
+        version: 0.1.0(svelte@5.53.7)
       '@openrouter/ai-sdk-provider':
         specifier: ^2.3.0
         version: 2.3.0(ai@6.0.116(zod@4.3.6))(zod@4.3.6)
@@ -317,6 +320,14 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@les3dev/i18n@0.1.0':
+    resolution: {integrity: sha512-lh2On+1tB/RT/xkXFufaMsxHYb8Pxz/owiCzx1ObzTNT7W7dUD3ETIaaZ48MbpSt7ef9UZV2i8vYMg+y/2+BKA==}
+    peerDependencies:
+      svelte: '>=5.0.0'
+    peerDependenciesMeta:
+      svelte:
+        optional: true
 
   '@openrouter/ai-sdk-provider@2.3.0':
     resolution: {integrity: sha512-LXbXDDxCmEnXqvLH+37ZgoQzlmkmAPCbrUaTYhsuquTNVAu8BiwNHW7sEHcA3NOE49k50TRtLHce9JKcgKeoGA==}
@@ -1443,6 +1454,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@les3dev/i18n@0.1.0(svelte@5.53.7)':
+    optionalDependencies:
+      svelte: 5.53.7
 
   '@openrouter/ai-sdk-provider@2.3.0(ai@6.0.116(zod@4.3.6))(zod@4.3.6)':
     dependencies:
