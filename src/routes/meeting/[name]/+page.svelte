@@ -204,6 +204,7 @@
     is_open={is_prompts_open}
     onrequestclose={() => (is_prompts_open = false)}
     position="center"
+    style="--width: 100%; --max-width: 90vw;"
 >
     <PromptDialog
         used_prompts={meeting.ai_tabs}

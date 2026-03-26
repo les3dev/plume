@@ -27,7 +27,7 @@
     );
 </script>
 
-<div class="min-w-lg">
+<div>
     {#if creating}
         <div class="flex items-center gap-3 pb-4">
             <button class="btn ghost icon" onclick={() => (creating = false)}>
@@ -118,10 +118,10 @@
             </button>
         </div>
         <div
-            class="grid max-h-[70vh] grid-cols-1 gap-4 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3"
+            class="grid max-h-[70vh] w-full grid-cols-1 gap-4 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3"
         >
             {#each filtered_prompts as prompt (prompt.id)}
-                <div class="flex flex-col gap-3 rounded-xl border border-bg-2 bg-bg-1 p-4">
+                <div class="flex flex-col gap-3 rounded-xl border border-bg-2 p-4">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="text-base leading-tight font-semibold">{prompt.title}</h2>
                         <button
