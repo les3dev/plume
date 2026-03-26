@@ -8,9 +8,7 @@
     import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {writeFile} from '@tauri-apps/plugin-fs';
-    import {save} from '@tauri-apps/plugin-dialog';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
-    import {open} from '@tauri-apps/plugin-shell';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import {get_prompt_context} from '$lib/prompt/prompt_context.svelte';
@@ -19,6 +17,9 @@
     import MarkdownResult from '$lib/prompt/MarkdownResult.svelte';
     import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
+    import FolderIcon from '$lib/icons/FolderIcon.svelte';
+    import {openPath} from '@tauri-apps/plugin-opener';
+    import {open} from '@tauri-apps/plugin-shell';
 
     const meeting = get_meeting_context();
     const settings = get_settings_context();
@@ -55,7 +56,7 @@
                       ?.title ?? default_name)
                 : default_name;
 
-        const path = `${folder_path}/${prompt_name}.txt`; // ← directement dans le dossier, pas de dialog
+        const path = `${folder_path}/${prompt_name}.txt`;
         if (!path) return;
         const encoder = new TextEncoder();
         const content =
@@ -85,6 +86,15 @@
             <CrossIcon --size="1.2rem" />
         </button>
         <input type="text" bind:value={meeting.meeting_name} class="border-none! bg-transparent!" />
+        <button
+            class="btn ghost icon"
+            onclick={() => {
+                console.log('folder_path:', folder_path);
+                openPath(folder_path);
+            }}
+        >
+            <FolderIcon />
+        </button>
         {#if meeting.audio_asset_path}
             <audio controls src={meeting.audio_asset_path} class="ms-auto h-10"></audio>
         {:else}

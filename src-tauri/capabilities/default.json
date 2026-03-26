@@ -72,6 +72,14 @@
                 }
             ]
         },
+        {
+            "identifier": "opener:allow-open-path",
+            "allow": [
+                {
+                    "path": "$HOME/**"
+                }
+            ]
+        },
         "positioner:default",
         "positioner:allow-move-window",
         "shell:default"
