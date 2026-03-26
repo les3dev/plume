@@ -38,7 +38,8 @@
             const query = search.toLowerCase();
             return (
                 folder.title.toLowerCase().includes(query) ||
-                folder.date.toFormat('dd/MM/yyyy HH:mm').includes(query)
+                folder.date.toFormat('dd/MM/yyyy HH:mm').includes(query) ||
+                folder.date.toFormat('MMMM yyyy', {locale: 'fr'}).toLowerCase().includes(query)
             );
         }),
     );
