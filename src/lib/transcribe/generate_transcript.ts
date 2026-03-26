@@ -115,6 +115,12 @@ export type TranscriptBlock = {
 };
 
 export const generate_transcript = async (path: string, api_key: string) => {
+    const ext = path.split('.').pop()?.toLowerCase();
+    const content_type = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : null;
+    if (!content_type) {
+        return new Error('Unsupported audio format');
+    }
+
     const audio_bytes = await catch_error(() => readFile(path));
     if (audio_bytes instanceof Error) {
         return audio_bytes;
@@ -133,7 +139,7 @@ export const generate_transcript = async (path: string, api_key: string) => {
             method: 'POST',
             headers: {
                 Authorization: `Token ${api_key}`,
-                'Content-Type': 'audio/wav',
+                'Content-Type': content_type,
             },
             body: audio_bytes.buffer as ArrayBuffer,
         }),
