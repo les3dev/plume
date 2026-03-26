@@ -57,6 +57,14 @@ class MeetingContext extends StoreContext {
 
     load_meeting = async (name: string) => {
         this.meeting_name = name;
+
+        this.audio_raw_path = undefined;
+        this.audio_asset_path = undefined;
+        this.transcript = [];
+        this.ai_tabs = [];
+        this.selected_ai_tab = 0;
+        this.tab_type = 'transcript';
+        this.is_generating = false;
     };
 
     save_meeting = async () => {
