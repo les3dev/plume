@@ -46,9 +46,16 @@
     };
 
     const download = async () => {
+        const default_name = 'transcript';
+        const prompt_name =
+            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
+                ? (prompts.prompts.find((p) => p.id === meeting.ai_tabs[meeting.selected_ai_tab].id)
+                      ?.title ?? default_name)
+                : default_name;
+
         const path = await save({
             filters: [{name: 'Text', extensions: ['txt']}],
-            defaultPath: 'transcript.txt',
+            defaultPath: `${prompt_name}.txt`,
         });
         if (!path) return;
         const encoder = new TextEncoder();
