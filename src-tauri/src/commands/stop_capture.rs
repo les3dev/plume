@@ -1,42 +1,29 @@
 use crate::audio::write_wav::write_wav;
 use crate::capture_state::{CaptureState, TARGET_RATE};
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager, State};
-use tauri_plugin_store::StoreExt;
+use tauri::State;
 
 #[tauri::command]
 pub async fn stop_capture(
     state: State<'_, CaptureState>,
-    app: AppHandle,
+    folder_path: String,
 ) -> Result<PathBuf, String> {
     {
         let mut guard = state.sys_engine.lock().unwrap();
         if let Some(engine) = guard.as_mut() {
             engine.stop_capture().map_err(|e| e.to_string())?;
-            *guard = None;
         } else {
             return Err("Not capturing".into());
-
         }
         *guard = None;
     }
 
     let mic_stream = state.mic_stream.lock().unwrap().take();
-
     drop(mic_stream.map(|s| s.0));
 
     let sys_buf = state.sys_buf.clone();
     let mic_buf = state.mic_buf.clone();
-
-    let store = app.store("settings.json").map_err(|e| e.to_string())?;
-    let save_path: Option<String> = store.get("save_path").and_then(|v| v.as_str().map(String::from));
-
-    let base_path = if let Some(path) = save_path {
-        PathBuf::from(path)
-    } else {
-        app.path().app_data_dir().map_err(|e| e.to_string())?
-    };
-    let path = base_path.join("capture.wav");
+    let path = PathBuf::from(folder_path).join("capture.wav");
 
     tokio::task::spawn_blocking(move || {
         let sys_frames = sys_buf.lock().unwrap().resampled_frames(TARGET_RATE);
@@ -46,8 +33,6 @@ pub async fn stop_capture(
         if total_frames == 0 {
             return Err("No audio data captured".into());
         }
-        // Uncomment to test loading state
-        // std::thread::sleep(std::time::Duration::from_secs(5));
 
         let mut mono_samples = Vec::with_capacity(total_frames);
         for i in 0..total_frames {

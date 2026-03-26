@@ -22,9 +22,10 @@
             start_time: Date,
             duration: string,
         ) => void;
+        folder_path: string;
         onstart: () => void;
     };
-    let {onfinish, onstart}: Props = $props();
+    let {onfinish, onstart, folder_path}: Props = $props();
 
     let error_message = $state<string>();
     let capture_state = $state<'initial' | 'capturing' | 'saving'>('initial');
@@ -35,7 +36,9 @@
     const save_capture = async (error_msg?: string) => {
         timer.stop();
         capture_state = 'saving';
-        const current_path = await catch_error(() => invoke<string>('stop_capture'));
+        const current_path = await catch_error(() =>
+            invoke<string>('stop_capture', {folderPath: folder_path}),
+        );
         capture_state = 'initial';
         await emit('recording-started');
         if (current_path instanceof Error) {

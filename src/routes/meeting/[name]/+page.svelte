@@ -45,6 +45,8 @@
         }
     };
 
+    const folder_path = $derived(`${settings.save_path}/${folder_name}`);
+
     const download = async () => {
         const default_name = 'transcript';
         const prompt_name =
@@ -53,10 +55,7 @@
                       ?.title ?? default_name)
                 : default_name;
 
-        const path = await save({
-            filters: [{name: 'Text', extensions: ['txt']}],
-            defaultPath: `${prompt_name}.txt`,
-        });
+        const path = `${folder_path}/${prompt_name}.txt`; // ← directement dans le dossier, pas de dialog
         if (!path) return;
         const encoder = new TextEncoder();
         const content =
@@ -119,6 +118,7 @@
                     meeting.start_transcript(raw_path, asset_path);
                     is_recording = false;
                 }}
+                {folder_path}
             />
             {#if !is_recording}
                 <Upload
