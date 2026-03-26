@@ -1,3 +1,7 @@
+<script>
+    export let rotate = 0; // Default rotation value
+</script>
+
 <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -8,6 +12,7 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
+    style="--rotate: {rotate}deg;"
     class="lucide lucide-chevron-left"><path d="m15 18-6-6 6-6"></path></svg
 >
 
@@ -15,5 +20,6 @@
     svg {
         width: var(--size);
         height: var(--size);
+        transform: rotate(var(--rotate, 0deg));
     }
 </style>
