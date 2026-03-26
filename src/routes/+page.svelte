@@ -107,16 +107,24 @@
 </div>
 
 <Dialog is_open={is_dialog_open} onrequestclose={() => (is_dialog_open = false)} position="center">
-    <input type="text" bind:value={title_meeting} />
-    <button
-        class="btn ghost"
-        onclick={async () => {
-            const result = await meetings.create_meeting(title_meeting);
-            if (result) {
-                is_dialog_open = false;
-                title_meeting = '';
-                goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
-            }
-        }}>Créer</button
-    >
+    <div class="flex flex-col justify-center gap-4">
+        <label for="title">Nom de dossier</label>
+        <input
+            type="text"
+            id="title"
+            bind:value={title_meeting}
+            placeholder="Rendez vous avec trump"
+        />
+        <button
+            class="btn ghost"
+            onclick={async () => {
+                const result = await meetings.create_meeting(title_meeting);
+                if (result) {
+                    is_dialog_open = false;
+                    title_meeting = '';
+                    goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
+                }
+            }}>Créer</button
+        >
+    </div>
 </Dialog>

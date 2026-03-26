@@ -24,6 +24,13 @@
     const settings = get_settings_context();
     const prompts = get_prompt_context();
 
+    let {params} = $props();
+    const folder_name = $derived(decodeURIComponent(params.name));
+
+    $effect(() => {
+        meeting.load_meeting(folder_name);
+    });
+
     let is_prompts_open = $state(false);
     let mail_error = $state<string>();
     let is_recording = $state(false);

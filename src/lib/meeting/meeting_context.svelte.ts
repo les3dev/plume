@@ -16,7 +16,6 @@ interface Meeting {
     recording_duration: string;
 }
 const store_path = 'meeting.json';
-
 class MeetingContext extends StoreContext {
     #settings = get_settings_context();
 
@@ -54,6 +53,10 @@ class MeetingContext extends StoreContext {
             this.start_recording_time = new Date(stored_meeting.start_recording_time);
             this.recording_duration = stored_meeting.recording_duration;
         }
+    };
+
+    load_meeting = async (name: string) => {
+        this.meeting_name = name;
     };
 
     save_meeting = async () => {
