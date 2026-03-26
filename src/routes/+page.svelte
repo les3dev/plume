@@ -7,12 +7,17 @@
     import {catch_error} from '$lib/helpers/catch_error';
     import {DateTime} from 'luxon';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
+    import {get_meetings_context} from '$lib/meetings/meetings_context.svelte';
+    import Dialog from '$lib/widgets/Dialog.svelte';
 
     const settings = get_settings_context();
+    const meetings = get_meetings_context();
 
     let search = $state('');
     let folders = $state<{path: string; title: string; date: DateTime}[]>([]);
     let error_message = $state('');
+    let is_dialog_open = $state(false);
+    let title_meeting = $state('');
 
     const parse_folder_name = (name: string) => {
         const parts = name.split(' ');
@@ -75,7 +80,7 @@
             autocomplete="off"
             autocorrect="off"
         />
-        <button class="btn ghost icon" onclick={() => goto(`/meeting/Sans titre`)}
+        <button class="btn ghost icon" onclick={() => (is_dialog_open = true)}
             ><CrossIcon rotate={45} /></button
         >
         <button class="btn ghost icon" onclick={() => goto('/settings')}>
@@ -100,3 +105,18 @@
         {/if}
     </div>
 </div>
+
+<Dialog is_open={is_dialog_open} onrequestclose={() => (is_dialog_open = false)} position="center">
+    <input type="text" bind:value={title_meeting} />
+    <button
+        class="btn ghost"
+        onclick={async () => {
+            const result = await meetings.create_meeting(title_meeting);
+            if (result) {
+                is_dialog_open = false;
+                title_meeting = '';
+                goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
+            }
+        }}>Créer</button
+    >
+</Dialog>
