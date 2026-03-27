@@ -5,6 +5,8 @@ import {generate_summary} from '$lib/prompt/generate_summary';
 import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
+import {convertFileSrc} from '@tauri-apps/api/core';
+import {exists} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 
 interface Meeting {
@@ -16,6 +18,7 @@ interface Meeting {
     recording_duration: string;
 }
 const store_path = 'meeting.json';
+
 class MeetingContext extends StoreContext {
     #settings = get_settings_context();
 
@@ -55,8 +58,10 @@ class MeetingContext extends StoreContext {
         }
     };
 
-    load_meeting = async (name: string) => {
-        this.meeting_name = name;
+    load_meeting = async (folder_name: string) => {
+        const parts = folder_name.split(' ');
+        const title = parts.slice(1).join(' ');
+        this.meeting_name = title;
 
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
@@ -65,6 +70,18 @@ class MeetingContext extends StoreContext {
         this.selected_ai_tab = 0;
         this.tab_type = 'transcript';
         this.is_generating = false;
+
+        if (!this.#settings.save_path) return;
+        const folder_path = `${this.#settings.save_path}/${folder_name}`;
+        const audio_path = `${folder_path}/capture.wav`;
+
+        const audio_exists = await exists(audio_path);
+        if (audio_exists) {
+            if (audio_exists) {
+                this.audio_raw_path = audio_path;
+                this.audio_asset_path = convertFileSrc(audio_path);
+            }
+        }
     };
 
     save_meeting = async () => {
@@ -90,11 +107,14 @@ class MeetingContext extends StoreContext {
     };
 
     start_transcript = async (raw_path: string, asset_path: string) => {
+        console.log('début de transcription', raw_path, asset_path);
         this.transcript_timer.start();
         this.audio_raw_path = raw_path;
         this.audio_asset_path = asset_path;
+        console.log('deepgram_key', this.#settings.deepgram_key);
         if (this.#settings.deepgram_key) {
             this.transcript = await generate_transcript(raw_path, this.#settings.deepgram_key);
+            console.log('transcript resultat', this.transcript);
         }
         this.transcript_timer.stop();
         await this.save_meeting();

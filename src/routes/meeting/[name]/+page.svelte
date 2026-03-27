@@ -84,9 +84,13 @@
 <div class="flex h-screen flex-col">
     <header class="flex items-center p-4 pb-2">
         <button class="btn ghost icon" onclick={() => goto('/')}>
-            <ChevronIcon/>
+            <ChevronIcon />
         </button>
-        <input type="text" bind:value={meeting.meeting_name} class="border-none! bg-transparent! grow font-mono!" />
+        <input
+            type="text"
+            bind:value={meeting.meeting_name}
+            class="grow border-none! bg-transparent! font-mono!"
+        />
         <button
             class="btn ghost icon grow"
             onclick={() => {
@@ -144,10 +148,26 @@
     {:else if meeting.transcript instanceof Error}
         <div class="m-auto text-error">Erreur de transcript: {meeting.transcript.message}</div>
     {:else if meeting.transcript.length === 0}
-        <div class="flex grow flex-col items-center justify-center gap-4">
-            <ProgressCircle --color="var(--color-primary)" show_value={false} infinite={true} />
-            <div>Transcription en cours ({meeting.transcript_timer.value})…</div>
-        </div>
+        {#if meeting.transcript_timer.start_time !== undefined && meeting.transcript_timer.end_time === undefined}
+            <div class="flex grow flex-col items-center justify-center gap-4">
+                <ProgressCircle --color="var(--color-primary)" show_value={false} infinite={true} />
+                <div>Transcription en cours ({meeting.transcript_timer.value})…</div>
+            </div>
+        {:else}
+            <div class="m-auto flex flex-col items-center gap-4">
+                <p class="text-fg-2">Aucune transcription disponible</p>
+                <button
+                    class="btn"
+                    onclick={() =>
+                        meeting.start_transcript(
+                            meeting.audio_raw_path!,
+                            meeting.audio_asset_path!,
+                        )}
+                >
+                    Transcrire
+                </button>
+            </div>
+        {/if}
     {:else}
         <div class="flex grow flex-col overflow-hidden">
             <div class="flex gap-2 px-4 pb-2">

@@ -14,7 +14,7 @@
     const meetings = get_meetings_context();
 
     let search = $state('');
-    let folders = $state<{path: string; title: string; date: DateTime}[]>([]);
+    let folders = $state<{path: string; title: string; date: DateTime; folder_name: string}[]>([]);
     let error_message = $state('');
     let is_dialog_open = $state(false);
     let title_meeting = $state('');
@@ -65,6 +65,7 @@
                     date: parsed.date,
                     title: parsed.title,
                     path: `${path}/${entry.name}`,
+                    folder_name: entry.name,
                 };
             });
     }
@@ -94,7 +95,10 @@
             <p>No folders found.</p>
         {:else}
             {#each filtered_folders as folder}
-                <button class="btn ghost w-full" onclick={() => goto(`/meeting/${folder.title}`)}>
+                <button
+                    class="btn ghost w-full"
+                    onclick={() => goto(`/meeting/${encodeURIComponent(folder.folder_name)}`)}
+                >
                     <span class="grow text-start font-serif font-normal">{folder.title}</span>
                     <span class="text-sm font-normal text-fg-2"
                         >{folder.date.toFormat('dd/MM/yyyy HH:mm')}</span

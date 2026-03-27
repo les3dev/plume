@@ -73,6 +73,14 @@
             ]
         },
         {
+            "identifier": "fs:allow-exists",
+            "allow": [
+                {
+                    "path": "$HOME/**"
+                }
+            ]
+        },
+        {
             "identifier": "opener:allow-open-path",
             "allow": [
                 {
