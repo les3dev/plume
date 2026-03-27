@@ -174,3 +174,16 @@ export const generate_transcript = async (path: string, api_key: string) => {
     }
     return blocks;
 };
+
+export const parse_transcript_text = (text: string): TranscriptBlock[] => {
+    return text
+        .split('\n\n')
+        .filter((block) => block.trim())
+        .map((block, index) => {
+            const colon_index = block.indexOf(':');
+            const speaker_part = block.slice(0, colon_index);
+            const text_part = block.slice(colon_index + 2);
+            const speaker = parseInt(speaker_part.replace('Speaker ', '')) - 1;
+            return {speaker, text: text_part, start: index};
+        });
+};

@@ -4,9 +4,9 @@ import {StoreContext} from '$lib/helpers/StoreContext';
 import {generate_summary} from '$lib/prompt/generate_summary';
 import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
-import {generate_transcript, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
+import {generate_transcript, parse_transcript_text, type TranscriptBlock} from '$lib/transcribe/generate_transcript';
 import {convertFileSrc} from '@tauri-apps/api/core';
-import {exists} from '@tauri-apps/plugin-fs';
+import {exists, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 
 interface Meeting {
@@ -61,8 +61,8 @@ class MeetingContext extends StoreContext {
     load_meeting = async (folder_name: string) => {
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
-        this.meeting_name = title;
 
+        this.meeting_name = title;
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
         this.transcript = [];
@@ -73,14 +73,19 @@ class MeetingContext extends StoreContext {
 
         if (!this.#settings.save_path) return;
         const folder_path = `${this.#settings.save_path}/${folder_name}`;
-        const audio_path = `${folder_path}/capture.wav`;
 
+        const audio_path = `${folder_path}/capture.wav`;
         const audio_exists = await exists(audio_path);
         if (audio_exists) {
-            if (audio_exists) {
-                this.audio_raw_path = audio_path;
-                this.audio_asset_path = convertFileSrc(audio_path);
-            }
+            this.audio_raw_path = audio_path;
+            this.audio_asset_path = convertFileSrc(audio_path);
+        }
+
+        const transcript_path = `${folder_path}/transcript.txt`;
+        const transcript_exists = await exists(transcript_path);
+        if (transcript_exists) {
+            const text = await readTextFile(transcript_path);
+            this.transcript = parse_transcript_text(text);
         }
     };
 
@@ -106,15 +111,17 @@ class MeetingContext extends StoreContext {
         await this.save_store();
     };
 
-    start_transcript = async (raw_path: string, asset_path: string) => {
+    start_transcript = async (raw_path: string, asset_path: string, folder_path: string) => {
         console.log('début de transcription', raw_path, asset_path);
         this.transcript_timer.start();
         this.audio_raw_path = raw_path;
         this.audio_asset_path = asset_path;
-        console.log('deepgram_key', this.#settings.deepgram_key);
         if (this.#settings.deepgram_key) {
             this.transcript = await generate_transcript(raw_path, this.#settings.deepgram_key);
             console.log('transcript resultat', this.transcript);
+            if (!(this.transcript instanceof Error) && this.transcript.length > 0) {
+                await writeTextFile(`${folder_path}/transcript.txt`, this.transcript_text);
+            }
         }
         this.transcript_timer.stop();
         await this.save_meeting();

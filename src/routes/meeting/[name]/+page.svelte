@@ -130,7 +130,7 @@
                 onfinish={(raw_path, asset_path, start_time, duration) => {
                     meeting.start_recording_time = start_time;
                     meeting.recording_duration = duration;
-                    meeting.start_transcript(raw_path, asset_path);
+                    meeting.start_transcript(raw_path, asset_path, folder_path);
                     is_recording = false;
                 }}
                 {folder_path}
@@ -140,7 +140,7 @@
                     onfile={(raw_path, asset_path, start_time, duration) => {
                         meeting.start_recording_time = start_time;
                         meeting.recording_duration = duration;
-                        meeting.start_transcript(raw_path, asset_path);
+                        meeting.start_transcript(raw_path, asset_path, folder_path);
                     }}
                 />
             {/if}
@@ -162,6 +162,7 @@
                         meeting.start_transcript(
                             meeting.audio_raw_path!,
                             meeting.audio_asset_path!,
+                            folder_path,
                         )}
                 >
                     Transcrire
