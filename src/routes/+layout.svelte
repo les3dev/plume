@@ -4,6 +4,7 @@
     import {set_meeting_context} from '../lib/meeting/meeting_context.svelte';
     import '@fontsource/source-serif-pro';
     import '@fontsource-variable/bricolage-grotesque';
+    import '@fontsource/space-mono';
     import {set_prompt_context} from '$lib/prompt/prompt_context.svelte';
     import {set_i18n_context} from '$lib/i18n/context.svelte';
     import {set_meetings_context} from '$lib/meetings/meetings_context.svelte';

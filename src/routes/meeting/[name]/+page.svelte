@@ -86,11 +86,7 @@
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <input
-            type="text"
-            bind:value={meeting.meeting_name}
-            class="grow border-none! bg-transparent! font-mono!"
-        />
+        <div class="font-serif font-bold">{meeting.meeting_name}</div>
         <button
             class="btn ghost icon grow"
             onclick={() => {

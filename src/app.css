@@ -23,7 +23,8 @@
     --radius-card: 1rem;
     --input-height: 2.4em;
     --font-sans: 'Space Grotesk Variable', system-ui, sans-serif;
-    --font-mono: 'Source Serif Pro', serif;
+    --font-serif: 'Source Serif Pro', serif;
+    --font-mono: 'Space Mono', monospace;
 }
 
 [color-scheme='light'] {
