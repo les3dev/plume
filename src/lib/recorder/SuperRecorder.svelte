@@ -136,7 +136,7 @@
     {/if}
 
     {#if capture_state === 'capturing'}
-        <div class="mt-4 font-mono text-3xl font-bold">{timer.value}</div>
+        <div class="mt-4 font-space-mono text-3xl font-bold">{timer.value}</div>
     {/if}
 </div>
 
@@ -150,6 +150,10 @@
         transition:
             background-color 0.5s ease,
             scale 0.3s ease;
+    }
+
+    .font-space-mono {
+        font-family: 'Space Mono', monospace;
     }
 
     .capture-btn.is-capturing {

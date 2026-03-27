@@ -95,7 +95,7 @@
         {:else}
             {#each filtered_folders as folder}
                 <button class="btn ghost w-full" onclick={() => goto(`/meeting/${folder.title}`)}>
-                    <span class="grow text-start">{folder.title}</span>
+                    <span class="grow text-start font-serif font-normal">{folder.title}</span>
                     <span class="text-sm font-normal text-fg-2"
                         >{folder.date.toFormat('dd/MM/yyyy HH:mm')}</span
                     >

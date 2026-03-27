@@ -20,6 +20,7 @@
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
     import {open} from '@tauri-apps/plugin-shell';
+    import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
 
     const meeting = get_meeting_context();
     const settings = get_settings_context();
@@ -81,13 +82,13 @@
 </script>
 
 <div class="flex h-screen flex-col">
-    <header class="flex items-center gap-2 p-4 pb-2">
+    <header class="flex items-center p-4 pb-2">
         <button class="btn ghost icon" onclick={() => goto('/')}>
-            <CrossIcon --size="1.2rem" />
+            <ChevronIcon/>
         </button>
-        <input type="text" bind:value={meeting.meeting_name} class="border-none! bg-transparent!" />
+        <input type="text" bind:value={meeting.meeting_name} class="border-none! bg-transparent! grow font-mono!" />
         <button
-            class="btn ghost icon"
+            class="btn ghost icon grow"
             onclick={() => {
                 console.log('folder_path:', folder_path);
                 openPath(folder_path);
@@ -96,7 +97,7 @@
             <FolderIcon />
         </button>
         {#if meeting.audio_asset_path}
-            <audio controls src={meeting.audio_asset_path} class="ms-auto h-10"></audio>
+            <audio controls src={meeting.audio_asset_path} class=" h-10"></audio>
         {:else}
             <button
                 class="btn ghost icon ms-auto"

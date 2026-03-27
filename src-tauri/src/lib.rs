@@ -64,14 +64,6 @@ pub fn run() {
                     stop2.set_enabled(false).ok();
                 });
             }
-
-            let window = app.get_webview_window("main").unwrap();
-            window.on_window_event(|event| {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                }
-            });
-
             Ok(())
         })
         .run(tauri::generate_context!())
