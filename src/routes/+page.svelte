@@ -42,14 +42,16 @@
     });
 
     let filtered_folders = $derived(
-        folders.filter((folder) => {
-            const query = search.toLowerCase();
-            return (
-                folder.title.toLowerCase().includes(query) ||
-                folder.date.toFormat('dd/MM/yyyy HH:mm').includes(query) ||
-                folder.date.toFormat('MMMM yyyy', {locale: 'fr'}).toLowerCase().includes(query)
-            );
-        }),
+        folders
+            .filter((folder) => {
+                const query = search.toLowerCase();
+                return (
+                    folder.title.toLowerCase().includes(query) ||
+                    folder.date.toFormat('dd/MM/yyyy HH:mm').includes(query) ||
+                    folder.date.toFormat('MMMM yyyy', {locale: 'fr'}).toLowerCase().includes(query)
+                );
+            })
+            .sort((first, last) => last.date.toMillis() - first.date.toMillis()),
     );
 
     async function load_folders(path: string) {
