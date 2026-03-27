@@ -9,6 +9,8 @@
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {get_meetings_context} from '$lib/meetings/meetings_context.svelte';
     import Dialog from '$lib/widgets/Dialog.svelte';
+    import PromptDialog from '$lib/prompt/PromptDialog.svelte';
+    import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
 
     const settings = get_settings_context();
     const meetings = get_meetings_context();
@@ -18,6 +20,7 @@
     let error_message = $state('');
     let is_dialog_open = $state(false);
     let title_meeting = $state('');
+    let is_prompts_open = $state(false);
 
     const parse_folder_name = (name: string) => {
         const parts = name.split(' ');
@@ -84,6 +87,13 @@
         <button class="btn ghost icon" onclick={() => (is_dialog_open = true)}
             ><CrossIcon rotate={45} /></button
         >
+        <button
+            class="btn ghost icon"
+            // disabled={meeting.is_generating}
+            onclick={() => (is_prompts_open = true)}
+        >
+            <SparklesIcon --size="1.2rem" />
+        </button>
         <button class="btn ghost icon" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
@@ -127,4 +137,13 @@
             }
         }}>Créer</button
     >
+</Dialog>
+
+<Dialog
+    is_open={is_prompts_open}
+    onrequestclose={() => (is_prompts_open = false)}
+    position="center"
+    style="--width: 100%; --max-width: 90vw;"
+>
+    <PromptDialog used_prompts={[]} can_generate={false} ongenerate={() => {}} />
 </Dialog>
