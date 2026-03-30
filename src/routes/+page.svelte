@@ -99,7 +99,9 @@
                     class="btn ghost w-full"
                     onclick={() => goto(`/meeting/${encodeURIComponent(folder.folder_name)}`)}
                 >
-                    <span class="grow text-start font-serif text-lg font-semibold">{folder.title}</span>
+                    <span class="grow text-start font-serif text-lg font-semibold"
+                        >{folder.title}</span
+                    >
                     <span class="text-sm font-normal text-fg-2"
                         >{folder.date.toFormat('dd/MM/yyyy HH:mm')}</span
                     >
@@ -110,23 +112,41 @@
     </div>
 </div>
 
-<Dialog is_open={is_dialog_open} onrequestclose={() => (is_dialog_open = false)} position="center">
-    <h1 class="mb-4">Créer un nouveau dossier d'enregistrement</h1>
-    <div class="flex flex-col justify-center gap-2">
-        <label for="title" class="">Nom de dossier</label>
-        <input type="text" id="title" bind:value={title_meeting} placeholder="ex: Entretien RH.." />
+<Dialog
+    is_open={is_dialog_open}
+    onrequestclose={() => (is_dialog_open = false)}
+    position="center"
+    style="--width: 100%; --max-width: 90vw;"
+>
+    <div>
+        <h1 class="mb-4 text-lg">Nouvelle réunion</h1>
+        <div class="flex flex-col gap-2">
+            <label for="title text-sm!" class="font-normal">Titre de la réunion</label>
+            <input
+                type="text"
+                id="title"
+                bind:value={title_meeting}
+                placeholder="ex: Entretien RH.."
+                class="w-full"
+            />
+        </div>
+        <div class="mt-4 flex justify-between">
+            <button class="btn ghost" onclick={() => (is_dialog_open = false)}> Annuler </button>
+            <button
+                class="btn"
+                onclick={async () => {
+                    const result = await meetings.create_meeting(title_meeting);
+                    if (result) {
+                        is_dialog_open = false;
+                        title_meeting = '';
+                        goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
+                    }
+                }}
+            >
+                Créer
+            </button>
+        </div>
     </div>
-    <button
-        class="btn ghost mt-10"
-        onclick={async () => {
-            const result = await meetings.create_meeting(title_meeting);
-            if (result) {
-                is_dialog_open = false;
-                title_meeting = '';
-                goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
-            }
-        }}>Créer</button
-    >
 </Dialog>
 
 <Dialog
