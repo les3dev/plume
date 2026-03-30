@@ -90,7 +90,9 @@
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <div class="font-serif text-lg">{meeting.meeting_name} <span class="text-xs text-fg-2 font-sans">{meeting_date}</span></div>
+        <div class="font-serif text-lg font-semibold">
+            {meeting.meeting_name} <span class="font-sans text-xs text-fg-2">{meeting_date}</span>
+        </div>
         <button
             class="btn ghost icon ms-auto"
             onclick={() => {

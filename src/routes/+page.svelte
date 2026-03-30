@@ -11,7 +11,7 @@
     import Dialog from '$lib/widgets/Dialog.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
-    import { parse_folder_name } from '$lib/helpers/parse_folder_name';
+    import {parse_folder_name} from '$lib/helpers/parse_folder_name';
 
     const settings = get_settings_context();
     const meetings = get_meetings_context();
@@ -99,7 +99,7 @@
                     class="btn ghost w-full"
                     onclick={() => goto(`/meeting/${encodeURIComponent(folder.folder_name)}`)}
                 >
-                    <span class="grow text-start font-serif font-normal">{folder.title}</span>
+                    <span class="grow text-start font-serif text-lg font-semibold">{folder.title}</span>
                     <span class="text-sm font-normal text-fg-2"
                         >{folder.date.toFormat('dd/MM/yyyy HH:mm')}</span
                     >
