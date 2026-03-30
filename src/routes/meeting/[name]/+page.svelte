@@ -88,7 +88,7 @@
         </button>
         <div class="font-serif font-bold">{meeting.meeting_name}</div>
         <button
-            class="btn ghost icon grow"
+            class="btn ghost icon ms-auto"
             onclick={() => {
                 console.log('folder_path:', folder_path);
                 openPath(folder_path);
