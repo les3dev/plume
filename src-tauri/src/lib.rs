@@ -7,7 +7,7 @@ use crate::{
     commands::stop_capture::stop_capture,
 };
 use tauri::{
-    Emitter, Manager, Listener,
+    Emitter, Listener,
     menu::{Menu, MenuItem},
 };
 
@@ -22,6 +22,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![start_capture, stop_capture])
         .setup(|app| {
             if let Some(tray) = app.tray_by_id("main") {
