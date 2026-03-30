@@ -2,7 +2,7 @@
     "$schema": "../gen/schemas/desktop-schema.json",
     "identifier": "default",
     "description": "Capability for the main window",
-    "windows": ["main"],
+    "windows": ["main", "plume_*"],
     "permissions": [
         "core:default",
         "opener:default",
@@ -107,6 +107,7 @@
             ]
         },
         "positioner:allow-move-window",
-        "shell:default"
+        "shell:default",
+        "core:webview:allow-create-webview-window"
     ]
 }

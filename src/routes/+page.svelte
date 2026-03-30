@@ -24,6 +24,7 @@
     let is_prompts_open = $state(false);
 
     $effect(() => {
+        console.log('save_path changed:', settings.save_path);
         if (settings.save_path) {
             load_folders(settings.save_path);
         }
