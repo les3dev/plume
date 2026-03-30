@@ -7,6 +7,7 @@
     import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import {onDestroy} from 'svelte';
+    import {notify} from '$lib/helpers/notify';
 
     type Props = {
         /**
@@ -90,10 +91,14 @@
             }
             timer.start();
             capture_state = 'capturing';
+            console.log('avant notify');
+            await notify('Enregistrement démarré');
             onstart();
             await emit('recording-started');
         } else if (capture_state === 'capturing') {
             await save_capture();
+            console.log('apres notify');
+            await notify('Enregistrement terminé');
         }
     };
 

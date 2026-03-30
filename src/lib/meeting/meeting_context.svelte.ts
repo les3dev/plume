@@ -12,11 +12,7 @@ import {
 import {convertFileSrc} from '@tauri-apps/api/core';
 import {exists, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
-import {
-    isPermissionGranted,
-    requestPermission,
-    sendNotification,
-} from '@tauri-apps/plugin-notification';
+import {notify} from '$lib/helpers/notify';
 
 interface Meeting {
     name: string;
@@ -133,16 +129,8 @@ class MeetingContext extends StoreContext {
             }
         }
         this.transcript_timer.stop();
-        let permission = await isPermissionGranted();
-        if (!permission) {
-            permission = (await requestPermission()) == 'granted';
-        }
-        if (permission) {
-            sendNotification({
-                title: 'Plume',
-                body: `Transcription de "${this.meeting_name}" terminée !`,
-            });
-        }
+        await notify(`Transcription de "${this.meeting_name}" terminée !`);
+
         await this.save_meeting();
     };
 
@@ -173,16 +161,7 @@ class MeetingContext extends StoreContext {
             },
         );
         this.is_generating = false;
-        let permission = await isPermissionGranted();
-        if (!permission) {
-            permission = (await requestPermission()) === 'granted';
-        }
-        if (permission) {
-            sendNotification({
-                title: 'Plume',
-                body: `"${prompt.title}" généré avec succès !`,
-            });
-        }
+        await notify(`"${prompt.title}" généré avec succès !`);
         await this.save_meeting();
     };
 
