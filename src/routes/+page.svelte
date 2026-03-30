@@ -11,6 +11,7 @@
     import Dialog from '$lib/widgets/Dialog.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
+    import { parse_folder_name } from '$lib/helpers/parse_folder_name';
 
     const settings = get_settings_context();
     const meetings = get_meetings_context();
@@ -21,19 +22,6 @@
     let is_dialog_open = $state(false);
     let title_meeting = $state('');
     let is_prompts_open = $state(false);
-
-    const parse_folder_name = (name: string) => {
-        const parts = name.split(' ');
-        if (parts.length < 2) {
-            return null;
-        }
-        const [date_part, time_part] = parts[0].split('_');
-        const formated_date = DateTime.fromFormat(`${date_part} ${time_part}`, 'yyyy-MM-dd HHmm');
-        return {
-            date: formated_date,
-            title: parts.slice(1).join(' '),
-        };
-    };
 
     $effect(() => {
         if (settings.save_path) {

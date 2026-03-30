@@ -21,6 +21,7 @@
     import {openPath} from '@tauri-apps/plugin-opener';
     import {open} from '@tauri-apps/plugin-shell';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
+    import {parse_folder_name} from '$lib/helpers/parse_folder_name.js';
 
     const meeting = get_meeting_context();
     const settings = get_settings_context();
@@ -48,6 +49,9 @@
     };
 
     const folder_path = $derived(`${settings.save_path}/${folder_name}`);
+    const meeting_date = $derived(
+        parse_folder_name(folder_name)?.date.toFormat('dd/MM/yyyy HH:mm') ?? '',
+    );
 
     const download = async () => {
         const default_name = 'transcript';
@@ -86,7 +90,7 @@
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <div class="font-serif font-bold">{meeting.meeting_name}</div>
+        <div class="font-serif text-lg">{meeting.meeting_name} <span class="text-xs text-fg-2 font-sans">{meeting_date}</span></div>
         <button
             class="btn ghost icon ms-auto"
             onclick={() => {
@@ -97,7 +101,7 @@
             <FolderIcon />
         </button>
         {#if meeting.audio_asset_path}
-            <audio controls src={meeting.audio_asset_path} class=" h-10"></audio>
+            <audio controls src={meeting.audio_asset_path} class="h-10"></audio>
         {:else}
             <button
                 class="btn ghost icon ms-auto"
