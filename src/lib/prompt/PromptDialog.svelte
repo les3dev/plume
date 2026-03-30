@@ -44,7 +44,7 @@
             <textarea
                 id="new-prompt"
                 bind:value={new_prompt.prompt}
-                class="h-auto! w-full"
+                class="h-auto! w-full font-serif!"
                 rows="15"
             ></textarea>
         </div>
