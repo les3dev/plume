@@ -32,6 +32,9 @@
     let filtered_folders = $derived(
         folders
             .filter((folder) => {
+                if (!folder.date.isValid) {
+                    return false;
+                }
                 const query = search.toLowerCase();
                 return (
                     folder.title.toLowerCase().includes(query) ||
