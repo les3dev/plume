@@ -18,12 +18,12 @@
     {#each transcript as block, index (index)}
         <div class="border-b border-bg-1 p-4 last:border-0">
             {#if index === 0 || transcript[index - 1].speaker !== block.speaker}
-                <p class="mb-2 text-fg-1">
+                <p class="mb-2 font-sans text-sm font-semibold text-fg-1">
                     Speaker {block.speaker + 1}
-                    <span class="text-xs text-fg-2 font-normal">{format_time(block.start)}</span>
+                    <span class="text-xs text-fg-2">{format_time(block.start)}</span>
                 </p>
             {/if}
-            <p class="font-mono">{block.text}</p>
+            <p class="font-serif">{block.text}</p>
         </div>
     {/each}
 </div>
