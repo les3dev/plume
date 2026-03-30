@@ -149,11 +149,13 @@ class MeetingContext extends StoreContext {
         this.selected_ai_tab = tab_index;
         this.tab_type = 'ai';
 
+        const model = prompt.model ?? this.#settings.model;
+
         await generate_summary(
             prompt.prompt,
             this.transcript_text,
             this.#settings.openrouter_key,
-            this.#settings.model,
+            model,
             this.start_recording_time,
             this.recording_duration,
             (delta) => {

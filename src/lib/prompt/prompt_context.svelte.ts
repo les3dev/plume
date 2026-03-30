@@ -6,14 +6,23 @@ export interface Prompt {
     id: string;
     title: string;
     prompt: string;
+    model?: string;
 }
 
 const store_path = 'prompts.json';
 
 const default_prompts: Prompt[] = [
     {id: crypto.randomUUID(), title: 'Email', prompt: 'Rédige un email professionnel au client :'},
-    {id: crypto.randomUUID(), title: 'Compte Rendu', prompt: 'Rédige un compte rendu clair et structuré :'},
-    {id: crypto.randomUUID(), title: 'Résumé', prompt: 'Fais un résumé clair et concis du texte suivant :'},
+    {
+        id: crypto.randomUUID(),
+        title: 'Compte Rendu',
+        prompt: 'Rédige un compte rendu clair et structuré :',
+    },
+    {
+        id: crypto.randomUUID(),
+        title: 'Résumé',
+        prompt: 'Fais un résumé clair et concis du texte suivant :',
+    },
 ];
 
 class PromptContext extends StoreContext {
@@ -46,11 +55,12 @@ class PromptContext extends StoreContext {
         this.save_prompts();
     };
 
-    edit_prompt = (id: string, title: string, prompt: string) => {
+    edit_prompt = (id: string, title: string, prompt: string, model?: string) => {
         const found = this.prompts.find((prompt) => prompt.id === id);
         if (!found) return;
         found.title = title;
         found.prompt = prompt;
+        found.model = model;
         this.save_prompts();
     };
 

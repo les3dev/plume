@@ -4,6 +4,8 @@
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import PenIcon from '$lib/icons/PenIcon.svelte';
     import {get_prompt_context, type Prompt} from './prompt_context.svelte';
+    import {ai_models} from '$lib/ai_models';
+    import {get_settings_context} from '$lib/settings/settings_context.svelte';
     type Props = {
         ongenerate: (prompt: Prompt) => void;
         can_generate: boolean;
@@ -12,10 +14,11 @@
     let {can_generate, used_prompts, ongenerate}: Props = $props();
 
     const prompt_context = get_prompt_context();
+    const settings_context = get_settings_context();
 
+    let new_prompt = $state({title: '', prompt: '', model: settings_context.model});
     let editing_prompt: Prompt | null = $state(null);
     let creating = $state(false);
-    let new_prompt = $state({title: '', prompt: ''});
     let search = $state('');
 
     let filtered_prompts = $derived(
@@ -34,6 +37,13 @@
                 <ChevronIcon --size="1.2rem" />
             </button>
             <h1>Ajouter un prompt</h1>
+            <select class="ms-auto!" bind:value={new_prompt.model}>
+                {#each ai_models as model}
+                    <option value={model.url}>
+                        {model.title}
+                    </option>
+                {/each}
+            </select>
         </div>
         <div class="flex flex-col gap-2">
             <label for="new-title">Titre</label>
@@ -52,7 +62,7 @@
             class="btn mt-4 w-fit"
             onclick={() => {
                 prompt_context.add_prompt(new_prompt);
-                new_prompt = {title: '', prompt: ''};
+                new_prompt = {title: '', prompt: '', model: settings_context.model};
                 creating = false;
             }}
         >
@@ -64,10 +74,17 @@
                 <ChevronIcon --size="1.2rem" />
             </button>
             <h1>Editer le prompt</h1>
+            <select class="ms-auto" bind:value={editing_prompt.model}>
+                {#each ai_models as model}
+                    <option value={model.url}>
+                        {model.title}
+                    </option>
+                {/each}
+            </select>
         </div>
         <div class="flex flex-col gap-2">
             <label for="title">Titre</label>
-            <input type="text" id="title" bind:value={editing_prompt.title} class="w-full" />
+            <input type="text" id="title" bind:value={editing_prompt.title} />
         </div>
         <div class="flex flex-col gap-2 pt-4">
             <label for="prompt">Prompt</label>
@@ -86,6 +103,7 @@
                         editing_prompt!.id,
                         editing_prompt!.title,
                         editing_prompt!.prompt,
+                        editing_prompt!.model,
                     );
                     editing_prompt = null;
                 }}
@@ -126,7 +144,11 @@
                         <h2 class="text-base leading-tight font-semibold">{prompt.title}</h2>
                         <button
                             class="btn ghost icon shrink-0"
-                            onclick={() => (editing_prompt = {...prompt})}
+                            onclick={() =>
+                                (editing_prompt = {
+                                    ...prompt,
+                                    model: prompt.model || settings_context.model,
+                                })}
                         >
                             <PenIcon --size="1rem" />
                         </button>

@@ -105,10 +105,8 @@
         {#if meeting.audio_asset_path}
             <audio controls src={meeting.audio_asset_path} class="h-10"></audio>
         {:else}
-            <button
-                class="btn ghost icon ms-auto"
-                title="Éditer les prompts"
-                onclick={() => (is_prompts_open = true)}><SparklesIcon --size="1.2rem" /></button
+            <button class="btn ghost icon ms-auto" onclick={() => (is_prompts_open = true)}
+                ><SparklesIcon --size="1.2rem" /></button
             >
         {/if}
         <button class="btn ghost icon" onclick={meeting.reset}> 🗑️ </button>

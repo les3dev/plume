@@ -9,7 +9,7 @@ export const ai_models = [
     },
     {
         title: 'Claude Haiku 3.5',
-        url: 'anthropic/claude-haiku-3-5',
+        url: 'anthropic/claude-3-5-haiku',
     },
     {
         title: 'Nemotron 3 Super 120B (free)',
