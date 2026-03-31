@@ -4,7 +4,7 @@
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import PenIcon from '$lib/icons/PenIcon.svelte';
     import {get_prompt_context, type Prompt} from './prompt_context.svelte';
-    import {ai_models} from '$lib/ai_models';
+    import {ai_models} from '$lib/helpers/ai_models';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
     type Props = {
         ongenerate: (prompt: Prompt) => void;

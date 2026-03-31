@@ -1,6 +1,6 @@
 <script lang="ts">
     import {goto} from '$app/navigation';
-    import {ai_models} from '$lib/ai_models';
+    import {ai_models} from '$lib/helpers/ai_models';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import InfoIcon from '$lib/icons/InfoIcon.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
