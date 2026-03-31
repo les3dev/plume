@@ -20,6 +20,8 @@
     import {open} from '@tauri-apps/plugin-shell';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {parse_folder_name} from '$lib/helpers/parse_folder_name.js';
+    import {writeFile} from '@tauri-apps/plugin-fs';
+    import {save} from '@tauri-apps/plugin-dialog';
 
     const meeting = get_meeting_context();
     const settings = get_settings_context();
@@ -51,6 +53,27 @@
         }
     };
 
+    const save_file = async () => {
+        const default_name = 'transcript';
+        const prompt_name =
+            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
+                ? (prompts.prompts.find((p) => p.id === meeting.ai_tabs[meeting.selected_ai_tab].id)
+                      ?.title ?? default_name)
+                : default_name;
+
+        const path = await save({
+            defaultPath: `${folder_path}/${prompt_name}.txt`,
+            filters: [{name: 'Result', extensions: ['txt']}],
+        });
+        if (!path) return;
+        const encoder = new TextEncoder();
+        const content =
+            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
+                ? meeting.ai_tabs[meeting.selected_ai_tab].ai_generation
+                : meeting.transcript_text;
+        await writeFile(path, encoder.encode(content));
+    };
+
     const open_mail = (body: string) => {
         if (!settings.mail_client) {
             mail_error = "Vous n'avez pas choisis de mail par défaut";
@@ -66,13 +89,17 @@
 </script>
 
 <div class="flex h-screen flex-col">
-    <header class="flex items-center p-4 pb-2">
+    <header class="flex items-center gap-2 p-4 pb-2">
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <div class="font-serif text-lg font-semibold">
-            {meeting.meeting_name} <span class="font-sans text-xs text-fg-2">{meeting_date}</span>
+        <div class="flex flex-wrap items-center gap-2 font-serif text-lg font-semibold">
+            <span>{meeting.meeting_name}</span>
+            <span class="font-sans text-xs text-fg-2">{meeting_date}</span>
         </div>
+        {#if meeting.audio_asset_path}
+            <audio controls src={meeting.audio_asset_path}></audio>
+        {/if}
         <button
             class="btn ghost icon ms-auto"
             onclick={() => {
@@ -80,16 +107,8 @@
                 openPath(folder_path);
             }}
         >
-            <FolderIcon />
+            <FolderIcon --size="1.4rem" />
         </button>
-        {#if meeting.audio_asset_path}
-            <audio controls src={meeting.audio_asset_path} class="h-10"></audio>
-        {:else}
-            <button class="btn ghost icon ms-auto" onclick={() => (is_prompts_open = true)}
-                ><SparklesIcon --size="1.2rem" /></button
-            >
-        {/if}
-        <button class="btn ghost icon" onclick={meeting.reset}> 🗑️ </button>
         <button class="btn ghost icon" title="Réglages" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
@@ -168,6 +187,7 @@
                             <p class="text-red-400 text-sm">{mail_error}</p>
                         {/if}
                     {/if}
+                    <button class="btn ms-auto" onclick={save_file}>Sauvegarder</button>
                 {/if}
             </div>
             <div class="flex grow flex-col overflow-auto">
@@ -188,7 +208,7 @@
             </div>
         </div>
         <div class="shrink-0 border-bg-2 p-4">
-            <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-4">
+            <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2">
                 <button
                     class="btn {meeting.tab_type === 'transcript' ? 'secondary' : 'ghost'}"
                     onclick={() => (meeting.tab_type = 'transcript')}

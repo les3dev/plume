@@ -47,6 +47,16 @@
                     folder.date.toFormat('MMMM yyyy', {locale: 'fr'}).toLowerCase().includes(query)
                 );
             })
+            .map((folder) => {
+                const regex = new RegExp(
+                    `(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+                    'gi',
+                );
+                return {
+                    ...folder,
+                    title: folder.title.replace(regex, `<span class="text-primary">$1</span>`),
+                };
+            })
             .sort((first, last) => last.date.toMillis() - first.date.toMillis()),
     );
 
@@ -84,28 +94,30 @@
         />
         <button
             class="btn ghost icon ms-auto"
+            title="Open meeting folder ({folder_path})"
             onclick={() => {
-                console.log('folder_path:', folder_path);
                 openPath(folder_path);
             }}
         >
-            <FolderIcon />
+            <FolderIcon --size="1.4rem" />
         </button>
-        <button class="btn ghost icon" onclick={() => (is_dialog_open = true)}
-            ><CrossIcon rotate={45} /></button
+        <button
+            class="btn ghost icon"
+            title="Create new meeting"
+            onclick={() => (is_dialog_open = true)}><CrossIcon rotate={45} /></button
         >
         <button
             class="btn ghost icon"
-            // disabled={meeting.is_generating}
+            title="Edit prompts"
             onclick={() => (is_prompts_open = true)}
         >
             <SparklesIcon --size="1.2rem" />
         </button>
-        <button class="btn ghost icon" onclick={() => goto('/settings')}>
+        <button class="btn ghost icon" title="Show settings" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
     </header>
-    <div class="flex flex-col gap-4 px-4">
+    <div class="flex grow flex-col overflow-auto px-4">
         {#if error_message}
             <p class="text-error">{error_message}</p>
         {:else if filtered_folders.length === 0}
@@ -113,11 +125,11 @@
         {:else}
             {#each filtered_folders as folder}
                 <button
-                    class="btn ghost w-full"
+                    class="btn ghost w-full py-6!"
                     onclick={() => goto(`/meeting/${encodeURIComponent(folder.folder_name)}`)}
                 >
                     <span class="grow text-start font-serif text-lg font-semibold"
-                        >{folder.title}</span
+                        >{@html folder.title}</span
                     >
                     <span class="text-sm font-normal text-fg-2"
                         >{folder.date.toFormat('dd/MM/yyyy HH:mm')}</span
