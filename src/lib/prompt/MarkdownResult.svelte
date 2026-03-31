@@ -13,7 +13,7 @@
     );
 </script>
 
-<div class="flex h-full flex-col px-6 font-mono" style:line-height="1.7">{@html html}</div>
+<div class="flex h-full flex-col px-6 font-serif" style:line-height="1.7">{@html html}</div>
 
 <style>
     div {
