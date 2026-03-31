@@ -4,10 +4,8 @@
     import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
     import Upload from '$lib/upload/Upload.svelte';
     import CopyIcon from '$lib/icons/CopyIcon.svelte';
-    import DownloadIcon from '$lib/icons/DownloadIcon.svelte';
     import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
-    import {writeFile} from '@tauri-apps/plugin-fs';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
@@ -52,24 +50,6 @@
             await navigator.clipboard.writeText(meeting.transcript_text);
         }
     };
-
-    // const download = async () => {
-    //     const default_name = 'transcript';
-    //     const prompt_name =
-    //         meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
-    //             ? (prompts.prompts.find((p) => p.id === meeting.ai_tabs[meeting.selected_ai_tab].id)
-    //                   ?.title ?? default_name)
-    //             : default_name;
-
-    //     const path = `${folder_path}/${prompt_name}.txt`;
-    //     if (!path) return;
-    //     const encoder = new TextEncoder();
-    //     const content =
-    //         meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
-    //             ? meeting.ai_tabs[meeting.selected_ai_tab].ai_generation
-    //             : meeting.transcript_text;
-    //     await writeFile(path, encoder.encode(content));
-    // };
 
     const open_mail = (body: string) => {
         if (!settings.mail_client) {
@@ -173,9 +153,6 @@
         <div class="flex grow flex-col overflow-hidden">
             <div class="flex gap-2 px-4 pb-2">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                <!-- <button class="btn ghost" onclick={download}
-                    ><DownloadIcon --size="1.2rem" />Télécharger</button
-                > -->
 
                 {#if meeting.ai_tabs.length > 0}
                     {@const current_generation = meeting.ai_tabs[meeting.selected_ai_tab]}
