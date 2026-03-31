@@ -63,9 +63,10 @@ class MeetingContext extends StoreContext {
         }
     };
 
-    load_meeting = async (folder_name: string) => {
+    load_meeting = async (folder_name: string, prompts: Prompt[]) => {
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
+        const prompt_files = prompts
 
         this.meeting_name = title;
         this.audio_raw_path = undefined;
@@ -91,6 +92,15 @@ class MeetingContext extends StoreContext {
         if (transcript_exists) {
             const text = await readTextFile(transcript_path);
             this.transcript = parse_transcript_text(text);
+        }
+
+        for (const prompt of prompt_files) {
+            const prompt_path = `${folder_path}/${prompt.title}.txt`;
+            const prompt_exists = await exists(prompt_path);
+            if (prompt_exists) {
+                const text = await readTextFile(prompt_path);
+                this.ai_tabs.push({id: prompt.id, ai_generation: text});
+            }
         }
     };
 
@@ -134,7 +144,7 @@ class MeetingContext extends StoreContext {
         await this.save_meeting();
     };
 
-    generate = async (prompt: Prompt) => {
+    generate = async (prompt: Prompt, folder_path: string) => {
         if (
             this.ai_tabs.some((t) => t.id === prompt.id) ||
             this.is_generating ||
@@ -163,6 +173,12 @@ class MeetingContext extends StoreContext {
             },
         );
         this.is_generating = false;
+        if (this.ai_tabs[tab_index].ai_generation) {
+            await writeTextFile(
+                `${folder_path}/${prompt.title}.txt`,
+                this.ai_tabs[tab_index].ai_generation,
+            );
+        }
         await notify(`"${prompt.title}" généré avec succès !`);
         await this.save_meeting();
     };

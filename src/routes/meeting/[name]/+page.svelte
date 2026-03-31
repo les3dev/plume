@@ -30,13 +30,18 @@
     let {params} = $props();
     const folder_name = $derived(decodeURIComponent(params.name));
 
-    $effect(() => {
-        meeting.load_meeting(folder_name);
-    });
-
     let is_prompts_open = $state(false);
     let mail_error = $state<string>();
     let is_recording = $state(false);
+
+    const folder_path = $derived(`${settings.save_path}/${folder_name}`);
+    const meeting_date = $derived(
+        parse_folder_name(folder_name)?.date.toFormat('dd/MM/yyyy HH:mm') ?? '',
+    );
+
+    $effect(() => {
+        meeting.load_meeting(folder_name, prompts.prompts);
+    });
 
     const copy = async () => {
         if (meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0) {
@@ -48,28 +53,23 @@
         }
     };
 
-    const folder_path = $derived(`${settings.save_path}/${folder_name}`);
-    const meeting_date = $derived(
-        parse_folder_name(folder_name)?.date.toFormat('dd/MM/yyyy HH:mm') ?? '',
-    );
+    // const download = async () => {
+    //     const default_name = 'transcript';
+    //     const prompt_name =
+    //         meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
+    //             ? (prompts.prompts.find((p) => p.id === meeting.ai_tabs[meeting.selected_ai_tab].id)
+    //                   ?.title ?? default_name)
+    //             : default_name;
 
-    const download = async () => {
-        const default_name = 'transcript';
-        const prompt_name =
-            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
-                ? (prompts.prompts.find((p) => p.id === meeting.ai_tabs[meeting.selected_ai_tab].id)
-                      ?.title ?? default_name)
-                : default_name;
-
-        const path = `${folder_path}/${prompt_name}.txt`;
-        if (!path) return;
-        const encoder = new TextEncoder();
-        const content =
-            meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
-                ? meeting.ai_tabs[meeting.selected_ai_tab].ai_generation
-                : meeting.transcript_text;
-        await writeFile(path, encoder.encode(content));
-    };
+    //     const path = `${folder_path}/${prompt_name}.txt`;
+    //     if (!path) return;
+    //     const encoder = new TextEncoder();
+    //     const content =
+    //         meeting.tab_type === 'ai' && meeting.ai_tabs.length > 0
+    //             ? meeting.ai_tabs[meeting.selected_ai_tab].ai_generation
+    //             : meeting.transcript_text;
+    //     await writeFile(path, encoder.encode(content));
+    // };
 
     const open_mail = (body: string) => {
         if (!settings.mail_client) {
@@ -173,9 +173,9 @@
         <div class="flex grow flex-col overflow-hidden">
             <div class="flex gap-2 px-4 pb-2">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                <button class="btn ghost" onclick={download}
+                <!-- <button class="btn ghost" onclick={download}
                     ><DownloadIcon --size="1.2rem" />Télécharger</button
-                >
+                > -->
 
                 {#if meeting.ai_tabs.length > 0}
                     {@const current_generation = meeting.ai_tabs[meeting.selected_ai_tab]}
@@ -256,7 +256,7 @@
         used_prompts={meeting.ai_tabs}
         can_generate={meeting.audio_asset_path !== undefined}
         ongenerate={(prompt) => {
-            meeting.generate(prompt);
+            meeting.generate(prompt, folder_path);
             is_prompts_open = false;
         }}
     />
