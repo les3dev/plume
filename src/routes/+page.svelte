@@ -12,9 +12,13 @@
     import PromptDialog from '$lib/prompt/PromptDialog.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import {parse_folder_name} from '$lib/helpers/parse_folder_name';
+    import FolderIcon from '$lib/icons/FolderIcon.svelte';
+    import {openPath} from '@tauri-apps/plugin-opener';
 
     const settings = get_settings_context();
     const meetings = get_meetings_context();
+
+    const folder_path = $derived(`${settings.save_path}`);
 
     let search = $state('');
     let folders = $state<{path: string; title: string; date: DateTime; folder_name: string}[]>([]);
@@ -78,6 +82,15 @@
             autocomplete="off"
             autocorrect="off"
         />
+        <button
+            class="btn ghost icon ms-auto"
+            onclick={() => {
+                console.log('folder_path:', folder_path);
+                openPath(folder_path);
+            }}
+        >
+            <FolderIcon />
+        </button>
         <button class="btn ghost icon" onclick={() => (is_dialog_open = true)}
             ><CrossIcon rotate={45} /></button
         >
