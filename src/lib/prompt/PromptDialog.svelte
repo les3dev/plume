@@ -162,6 +162,11 @@
                             Générer
                         </button>
                     {/if}
+                    <span class="text-xs text-fg-2">
+                        {ai_models.find(
+                            (model) => model.url === (prompt.model || settings_context.model),
+                        )?.title ?? ''}
+                    </span>
                 </div>
             {/each}
         </div>
