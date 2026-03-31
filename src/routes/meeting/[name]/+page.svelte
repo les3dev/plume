@@ -187,7 +187,9 @@
                             <p class="text-red-400 text-sm">{mail_error}</p>
                         {/if}
                     {/if}
-                    <button class="btn ms-auto" onclick={save_file}>Sauvegarder</button>
+                    {#if meeting.tab_type === 'ai'}
+                        <button class="btn ms-auto" onclick={save_file}>Sauvegarder</button>
+                    {/if}
                 {/if}
             </div>
             <div class="flex grow flex-col overflow-auto">
