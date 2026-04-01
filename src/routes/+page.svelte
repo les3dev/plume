@@ -23,7 +23,7 @@
     let search = $state('');
     let folders = $state<{path: string; title: string; date: DateTime; folder_name: string}[]>([]);
     let error_message = $state('');
-    let is_dialog_open = $state(false);
+    let is_new_open = $state(false);
     let title_meeting = $state('');
     let is_prompts_open = $state(false);
 
@@ -104,7 +104,7 @@
         <button
             class="btn ghost icon"
             title="Create new meeting"
-            onclick={() => (is_dialog_open = true)}><CrossIcon rotate={45} /></button
+            onclick={() => (is_new_open = true)}><CrossIcon rotate={45} /></button
         >
         <button
             class="btn ghost icon"
@@ -142,15 +142,15 @@
 </div>
 
 <Dialog
-    is_open={is_dialog_open}
-    onrequestclose={() => (is_dialog_open = false)}
+    is_open={is_new_open}
+    onrequestclose={() => (is_new_open = false)}
     position="center"
-    style="--width: 100%; --max-width: 90vw;"
+    --max-width="90%"
+    --width="20rem"
 >
     <div>
-        <h1 class="mb-4 text-lg">Nouvelle réunion</h1>
         <div class="flex flex-col gap-2">
-            <label for="title text-sm!" class="font-normal">Titre de la réunion</label>
+            <label for="title text-sm!" class="font-normal">Nouvelle réunion</label>
             <input
                 type="text"
                 id="title"
@@ -160,13 +160,13 @@
             />
         </div>
         <div class="mt-4 flex justify-between">
-            <button class="btn ghost" onclick={() => (is_dialog_open = false)}> Annuler </button>
+            <button class="btn ghost" onclick={() => (is_new_open = false)}> Annuler </button>
             <button
                 class="btn"
                 onclick={async () => {
                     const result = await meetings.create_meeting(title_meeting);
                     if (result) {
-                        is_dialog_open = false;
+                        is_new_open = false;
                         title_meeting = '';
                         goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
                     }
@@ -182,7 +182,8 @@
     is_open={is_prompts_open}
     onrequestclose={() => (is_prompts_open = false)}
     position="center"
-    style="--width: 100%; --max-width: 90vw;"
+    --width="50rem"
+    --max-width="90%"
 >
     <PromptDialog used_prompts={[]} can_generate={false} ongenerate={() => {}} />
 </Dialog>
