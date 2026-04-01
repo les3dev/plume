@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "plume",
+    "productName": "Plume",
     "version": "0.1.0",
     "identifier": "dev.les3.plume",
     "build": {
@@ -16,7 +16,7 @@
         },
         "windows": [
             {
-                "title": "plume",
+                "title": "Plume",
                 "width": 600,
                 "height": 800,
                 "visible": true
