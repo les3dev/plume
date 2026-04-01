@@ -22,6 +22,9 @@
     import {parse_folder_name} from '$lib/helpers/parse_folder_name.js';
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
+    import Popover from '$lib/widgets/Popover.svelte';
+    import InfoIcon from '$lib/icons/InfoIcon.svelte';
+    import MicIcon from '$lib/icons/MicIcon.svelte';
 
     const meeting = get_meeting_context();
     const settings = get_settings_context();
@@ -86,6 +89,8 @@
         };
         open(urls[settings.mail_client]);
     };
+
+    let is_audio_open = $state(false);
 </script>
 
 <div class="flex h-screen flex-col">
@@ -93,15 +98,22 @@
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <div class="flex flex-wrap items-center gap-2 font-serif text-lg font-semibold">
+        <div class="me-auto flex flex-wrap items-center gap-2 font-serif text-lg font-semibold">
             <span>{meeting.meeting_name}</span>
             <span class="font-sans text-xs text-fg-2">{meeting_date}</span>
         </div>
         {#if meeting.audio_asset_path}
-            <audio controls src={meeting.audio_asset_path}></audio>
+            <Popover bind:is_open={is_audio_open}>
+                {#snippet target()}
+                    <button class="btn ghost icon" onclick={() => (is_audio_open = !is_audio_open)}
+                        ><MicIcon --size="1.2rem" /></button
+                    >
+                {/snippet}
+                <audio controls src={meeting.audio_asset_path}></audio>
+            </Popover>
         {/if}
         <button
-            class="btn ghost icon ms-auto"
+            class="btn ghost icon"
             onclick={() => {
                 console.log('folder_path:', folder_path);
                 openPath(folder_path);
