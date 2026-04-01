@@ -13,6 +13,7 @@ import {convertFileSrc} from '@tauri-apps/api/core';
 import {exists, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
+import {SvelteMap} from 'svelte/reactivity';
 
 interface Meeting {
     name: string;
@@ -40,10 +41,17 @@ class MeetingContext extends StoreContext {
     selected_ai_tab = $state(0);
     is_generating = $state(false);
 
+    speaker_names = new SvelteMap<number, string>();
+
     transcript_text = $derived(
         this.transcript instanceof Error
             ? ''
-            : this.transcript.map((s) => `Speaker ${s.speaker + 1}: ${s.text}`).join('\n\n'),
+            : this.transcript
+                  .map(
+                      (s) =>
+                          `${this.speaker_names.get(s.speaker) ?? `Speaker ${s.speaker + 1}`}: ${s.text}`,
+                  )
+                  .join('\n\n'),
     );
 
     constructor() {
@@ -66,7 +74,7 @@ class MeetingContext extends StoreContext {
     load_meeting = async (folder_name: string, prompts: Prompt[]) => {
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
-        const prompt_files = prompts
+        const prompt_files = prompts;
 
         this.meeting_name = title;
         this.audio_raw_path = undefined;

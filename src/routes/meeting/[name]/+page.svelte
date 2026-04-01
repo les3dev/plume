@@ -14,7 +14,6 @@
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import MarkdownResult from '$lib/prompt/MarkdownResult.svelte';
     import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
-    import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
     import {open} from '@tauri-apps/plugin-shell';
@@ -23,7 +22,6 @@
     import {writeFile} from '@tauri-apps/plugin-fs';
     import {save} from '@tauri-apps/plugin-dialog';
     import Popover from '$lib/widgets/Popover.svelte';
-    import InfoIcon from '$lib/icons/InfoIcon.svelte';
     import MicIcon from '$lib/icons/MicIcon.svelte';
 
     const meeting = get_meeting_context();
@@ -98,12 +96,12 @@
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <div class="me-auto flex flex-wrap items-center gap-2 font-serif text-lg font-semibold">
-            <span>{meeting.meeting_name}</span>
+        <div class="me-auto flex flex-wrap items-center font-serif text-lg font-semibold">
+            <span class="me-2">{meeting.meeting_name}</span>
             <span class="font-sans text-xs text-fg-2">{meeting_date}</span>
         </div>
         {#if meeting.audio_asset_path}
-            <Popover bind:is_open={is_audio_open}>
+            <Popover bind:is_open={is_audio_open} offset_y={10}>
                 {#snippet target()}
                     <button class="btn ghost icon" onclick={() => (is_audio_open = !is_audio_open)}
                         ><MicIcon --size="1.2rem" /></button

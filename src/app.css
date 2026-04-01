@@ -22,7 +22,7 @@
     --radius-input: 1em;
     --radius-card: 1rem;
     --input-height: 2.4em;
-    --font-sans: 'Space Grotesk Variable', system-ui, sans-serif;
+    --font-sans: 'Bricolage Grotesque Variable', system-ui, sans-serif;
     --font-serif: 'Source Serif Pro', serif;
     --font-mono: 'Space Mono', monospace;
 }
@@ -53,7 +53,6 @@ body {
     overflow: auto;
     color: var(--color-fg);
     background-color: var(--color-bg);
-    font-family: 'Bricolage Grotesque Variable', sans-serif;
 }
 
 /* scrollbar */
