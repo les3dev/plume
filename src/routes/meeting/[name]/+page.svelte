@@ -24,6 +24,7 @@
     import PenIcon from '$lib/icons/PenIcon.svelte';
     import {remove} from '@tauri-apps/plugin-fs';
     import {page} from '$app/state';
+    import TrashIcon from '$lib/icons/TrashIcon.svelte';
 
     const meeting_context = get_meeting_context();
     const settings_context = get_settings_context();
@@ -146,7 +147,9 @@
             {/if}
         </div>
     {:else if meeting_context.transcript instanceof Error}
-        <div class="m-auto text-error">Erreur de transcript: {meeting_context.transcript.message}</div>
+        <div class="m-auto text-error">
+            Erreur de transcript: {meeting_context.transcript.message}
+        </div>
     {:else if meeting_context.transcript.length === 0}
         {#if meeting_context.transcript_timer.start_time !== undefined && meeting_context.transcript_timer.end_time === undefined}
             <div class="flex grow flex-col items-center justify-center gap-4">
@@ -175,8 +178,11 @@
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
 
                 {#if meeting_context.ai_tabs.length > 0}
-                    {@const current_generation = meeting_context.ai_tabs[meeting_context.selected_ai_tab]}
-                    {@const prompt = prompts_context.prompts.find((p) => p.id === current_generation.id)}
+                    {@const current_generation =
+                        meeting_context.ai_tabs[meeting_context.selected_ai_tab]}
+                    {@const prompt = prompts_context.prompts.find(
+                        (p) => p.id === current_generation.id,
+                    )}
                     {#if prompt?.title === 'Email' && settings_context.mail_client && current_generation.ai_generation}
                         <button
                             class="btn ghost"
@@ -200,7 +206,9 @@
                         </button>
                         <button
                             class="btn ms-auto"
-                            onclick={() => delete_file(current_generation.id)}>Supprimer</button
+                            onclick={() => delete_file(current_generation.id)}
+                        >
+                            <TrashIcon --size="1.2rem" />Supprimer</button
                         >
                     {/if}
                 {/if}
@@ -214,7 +222,8 @@
                 {:else if meeting_context.tab_type === 'ai'}
                     {#if meeting_context.ai_tabs.length > 0}
                         <MarkdownResult
-                            markdown={meeting_context.ai_tabs[meeting_context.selected_ai_tab].ai_generation}
+                            markdown={meeting_context.ai_tabs[meeting_context.selected_ai_tab]
+                                .ai_generation}
                         />
                     {:else if meeting_context.is_generating}
                         <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
@@ -234,7 +243,8 @@
                     {@const prompt = prompts_context.prompts.find((p) => p.id === tab.id)}
                     {#if prompt}
                         <button
-                            class="btn {meeting_context.selected_ai_tab === i && meeting_context.tab_type === 'ai'
+                            class="btn {meeting_context.selected_ai_tab === i &&
+                            meeting_context.tab_type === 'ai'
                                 ? 'secondary'
                                 : 'ghost'}"
                             onclick={() => {
@@ -262,7 +272,8 @@
     is_open={is_prompts_open}
     onrequestclose={() => (is_prompts_open = false)}
     position="center"
-    style="--width: 100%; --max-width: 90vw;"
+    --width="50rem"
+    --max-width="90%"
 >
     <PromptDialog
         used_prompts={meeting_context.ai_tabs}
