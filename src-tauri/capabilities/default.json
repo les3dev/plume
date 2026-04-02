@@ -65,6 +65,14 @@
             ]
         },
         {
+            "identifier": "fs:allow-remove",
+            "allow": [
+                {
+                    "path": "$HOME/**"
+                }
+            ]
+        },
+        {
             "identifier": "fs:allow-mkdir",
             "allow": [
                 {
