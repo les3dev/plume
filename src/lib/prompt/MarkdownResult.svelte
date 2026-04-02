@@ -1,15 +1,23 @@
 <script lang="ts">
     import {unified} from 'unified';
     import remarkParse from 'remark-parse';
+    import remarkBreaks from 'remark-breaks';
     import remarkHtml from 'remark-html';
 
     type Props = {
         markdown: string;
     };
     let {markdown}: Props = $props();
-
     let html = $derived(
-        unified().use(remarkParse).use(remarkHtml).processSync(markdown).toString(),
+        (() => {
+            // console.log('markdown reçu:', JSON.stringify(markdown.slice(0, 200)));
+            return unified()
+                .use(remarkParse)
+                .use(remarkBreaks)
+                .use(remarkHtml)
+                .processSync(markdown.replace(/\\n/g, '\n')) // espacement
+                .toString();
+        })(),
     );
 </script>
 

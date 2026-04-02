@@ -71,7 +71,7 @@ class MeetingContext extends StoreContext {
         }
     };
 
-    load_meeting = async (folder_name: string, prompts: Prompt[]) => {
+    load_meeting = async (folder_name: string, prompts: Prompt[], selected_prompt_id?: string) => {
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
         const prompt_files = prompts;
@@ -108,6 +108,13 @@ class MeetingContext extends StoreContext {
             if (prompt_exists) {
                 const text = await readTextFile(prompt_path);
                 this.ai_tabs.push({id: prompt.id, ai_generation: text});
+            }
+        }
+        if (selected_prompt_id) {
+            const tab = this.ai_tabs.find((tab) => tab.id === selected_prompt_id);
+            if (tab) {
+                this.selected_ai_tab = this.ai_tabs.indexOf(tab);
+                this.tab_type = 'ai';
             }
         }
     };

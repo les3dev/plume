@@ -23,6 +23,8 @@
     import {save} from '@tauri-apps/plugin-dialog';
     import Popover from '$lib/widgets/Popover.svelte';
     import MicIcon from '$lib/icons/MicIcon.svelte';
+    import PenIcon from '$lib/icons/PenIcon.svelte';
+    import {page} from '$app/state';
 
     const meeting = get_meeting_context();
     const settings = get_settings_context();
@@ -41,7 +43,8 @@
     );
 
     $effect(() => {
-        meeting.load_meeting(folder_name, prompts.prompts);
+        const prompt_id = page.url.searchParams.get('prompt') ?? undefined;
+        meeting.load_meeting(folder_name, prompts.prompts, prompt_id);
     });
 
     const copy = async () => {
@@ -198,6 +201,15 @@
                         {/if}
                     {/if}
                     {#if meeting.tab_type === 'ai'}
+                        <button
+                            class="btn ghost"
+                            onclick={() =>
+                                goto(
+                                    `/meeting/${encodeURIComponent(folder_name)}/edit?prompt=${meeting.ai_tabs[meeting.selected_ai_tab].id}`,
+                                )}
+                        >
+                            <PenIcon --size="1.2rem" /> Éditer
+                        </button>
                         <button class="btn ms-auto" onclick={save_file}>Sauvegarder</button>
                     {/if}
                 {/if}
