@@ -17,7 +17,10 @@
 </script>
 
 <div class="flex h-full flex-col px-2">
-    <div class="self-end px-4 text-sm text-fg-1">Durée totale : {duration}</div>
+    <div class="self-end px-4 text-sm text-fg-1">
+        Durée totale : {duration}
+        {meeting.speaker_names.saving ? '⌛' : '✅'}
+    </div>
     {#each transcript as block, index (index)}
         <div class="border-b border-bg-1 p-4 last:border-0">
             {#if index === 0 || transcript[index - 1].speaker !== block.speaker}
@@ -28,10 +31,10 @@
                         type="text"
                         bind:value={
                             () =>
-                                meeting.speaker_names.get(block.speaker) ??
+                                meeting.speaker_names.data[block.speaker] ??
                                 `Speaker ${block.speaker + 1}`,
                             (newValue) => {
-                                meeting.speaker_names.set(block.speaker, newValue);
+                                meeting.speaker_names.data[block.speaker] = newValue;
                             }
                         }
                     />

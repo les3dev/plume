@@ -1,6 +1,4 @@
-import {browser} from '$app/environment';
 import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
-import {StoreContext} from '$lib/helpers/StoreContext';
 import {generate_summary} from '$lib/prompt/generate_summary';
 import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
@@ -13,19 +11,9 @@ import {convertFileSrc} from '@tauri-apps/api/core';
 import {exists, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
-import {SvelteMap} from 'svelte/reactivity';
+import {debounced} from '$lib/helpers/debounced.svelte';
 
-interface Meeting {
-    name: string;
-    audio_raw_path: string;
-    audio_asset_path: string;
-    transcript: TranscriptBlock[];
-    start_recording_time: string;
-    recording_duration: string;
-}
-const store_path = 'meeting.json';
-
-class MeetingContext extends StoreContext {
+class MeetingContext {
     #settings = get_settings_context();
 
     meeting_name = $state('Nouvelle réunion');
@@ -36,12 +24,21 @@ class MeetingContext extends StoreContext {
     recording_duration = $state<string>();
     transcript_timer = reactive_timer();
 
+    folder_name = $state('');
+
     tab_type = $state<'transcript' | 'ai'>('transcript');
     ai_tabs = $state<{id: string; ai_generation: string}[]>([]);
     selected_ai_tab = $state(0);
     is_generating = $state(false);
 
-    speaker_names = new SvelteMap<number, string>();
+    speaker_names = debounced(
+        () => ({}) as Record<number, string>,
+        async () => {
+            console.log('Saving new transcript', this.speaker_names.data, this.transcript_text);
+            const folder_path = `${this.#settings.save_path}/${this.folder_name}`;
+            await writeTextFile(`${folder_path}/transcript.txt`, this.transcript_text);
+        },
+    );
 
     transcript_text = $derived(
         this.transcript instanceof Error
@@ -49,29 +46,13 @@ class MeetingContext extends StoreContext {
             : this.transcript
                   .map(
                       (s) =>
-                          `${this.speaker_names.get(s.speaker) ?? `Speaker ${s.speaker + 1}`}: ${s.text}`,
+                          `${this.speaker_names.data[s.speaker] ?? `Speaker ${s.speaker + 1}`}: ${s.text}`,
                   )
                   .join('\n\n'),
     );
 
-    constructor() {
-        super(store_path);
-        if (browser) this.load_store();
-    }
-
-    load_store = async () => {
-        const stored_meeting = await this.get_from_store<Meeting>('meeting');
-        if (stored_meeting) {
-            this.meeting_name = stored_meeting.name;
-            this.audio_raw_path = stored_meeting.audio_raw_path;
-            this.audio_asset_path = stored_meeting.audio_asset_path;
-            this.transcript = stored_meeting.transcript;
-            this.start_recording_time = new Date(stored_meeting.start_recording_time);
-            this.recording_duration = stored_meeting.recording_duration;
-        }
-    };
-
     load_meeting = async (folder_name: string, prompts: Prompt[], selected_prompt_id?: string) => {
+        this.folder_name = folder_name;
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
         const prompt_files = prompts;
@@ -99,7 +80,11 @@ class MeetingContext extends StoreContext {
         const transcript_exists = await exists(transcript_path);
         if (transcript_exists) {
             const text = await readTextFile(transcript_path);
-            this.transcript = parse_transcript_text(text);
+            const {blocks, speaker_names} = parse_transcript_text(text);
+            this.transcript = blocks;
+            for (const [index, name] of Object.entries(speaker_names)) {
+                this.speaker_names.data[index as any] = name;
+            }
         }
 
         for (const prompt of prompt_files) {
@@ -119,28 +104,6 @@ class MeetingContext extends StoreContext {
         }
     };
 
-    save_meeting = async () => {
-        if (
-            !this.start_recording_time ||
-            this.transcript instanceof Error ||
-            !this.recording_duration ||
-            !this.audio_raw_path ||
-            !this.audio_asset_path
-        ) {
-            return;
-        }
-        await this.set_to_store<Meeting>('meeting', {
-            name: this.meeting_name,
-            audio_raw_path: this.audio_raw_path,
-            audio_asset_path: this.audio_asset_path,
-            transcript: this.transcript,
-            start_recording_time: this.start_recording_time.toISOString(),
-            recording_duration: this.recording_duration,
-        });
-
-        await this.save_store();
-    };
-
     start_transcript = async (raw_path: string, asset_path: string, folder_path: string) => {
         console.log('début de transcription', raw_path, asset_path);
         this.transcript_timer.start();
@@ -155,8 +118,6 @@ class MeetingContext extends StoreContext {
         }
         this.transcript_timer.stop();
         await notify(`Transcription de "${this.meeting_name}" terminée !`);
-
-        await this.save_meeting();
     };
 
     generate = async (prompt: Prompt, folder_path: string) => {
@@ -195,7 +156,6 @@ class MeetingContext extends StoreContext {
             );
         }
         await notify(`"${prompt.title}" généré avec succès !`);
-        await this.save_meeting();
     };
 
     reset = async () => {
@@ -206,8 +166,6 @@ class MeetingContext extends StoreContext {
         this.selected_ai_tab = 0;
         this.is_generating = false;
         this.meeting_name = 'Nouvelle réunion';
-        await this.set_to_store('meeting', null);
-        await this.save_store();
     };
 }
 

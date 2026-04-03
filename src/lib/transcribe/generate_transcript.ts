@@ -175,15 +175,33 @@ export const generate_transcript = async (path: string, api_key: string) => {
     return blocks;
 };
 
-export const parse_transcript_text = (text: string): TranscriptBlock[] => {
-    return text
-        .split('\n\n')
-        .filter((block) => block.trim())
-        .map((block, index) => {
-            const colon_index = block.indexOf(':');
-            const speaker_part = block.slice(0, colon_index);
-            const text_part = block.slice(colon_index + 2);
+export const parse_transcript_text = (
+    text: string,
+): {blocks: TranscriptBlock[]; speaker_names: Record<number, string>} => {
+    const texts = text.split('\n\n');
+    let blocks: TranscriptBlock[] = [];
+    let speaker_names: Record<number, string> = {};
+    let index = 0;
+    for (const text of texts) {
+        if (!text.trim()) {
+            continue;
+        }
+        const colon_index = text.indexOf(':');
+        const speaker_part = text.slice(0, colon_index);
+        const text_part = text.slice(colon_index + 2);
+        if (text.startsWith('Speaker')) {
             const speaker = parseInt(speaker_part.replace('Speaker ', '')) - 1;
-            return {speaker, text: text_part, start: index};
-        });
+            blocks.push({speaker, text: text_part, start: index});
+        } else {
+            const speaker_entries = Object.entries(speaker_names);
+            const speaker = speaker_entries.find(([_, name]) => name === speaker_part);
+            if (!speaker) {
+                speaker_names[speaker_entries.length] = speaker_part;
+                blocks.push({speaker: speaker_entries.length, text: text_part, start: index});
+            } else {
+                blocks.push({speaker: parseInt(speaker[0]), text: text_part, start: index});
+            }
+        }
+    }
+    return {blocks, speaker_names};
 };
