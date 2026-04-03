@@ -37,11 +37,13 @@
     let mail_error = $state<string>();
     let is_recording = $state(false);
     let is_audio_open = $state(false);
+    let show_dialog_deleted = $state(false);
 
     const folder_path = $derived(`${settings_context.save_path}/${folder_name}`);
     const meeting_date = $derived(
         parse_folder_name(folder_name)?.date.toFormat('dd/MM/yyyy HH:mm') ?? '',
     );
+    const current_generation = $derived(meeting_context.ai_tabs[meeting_context.selected_ai_tab]);
 
     $effect(() => {
         const prompt_id = page.url.searchParams.get('prompt') ?? undefined;
@@ -205,8 +207,8 @@
                             <PenIcon --size="1.2rem" /> Éditer
                         </button>
                         <button
-                            class="btn ms-auto"
-                            onclick={() => delete_file(current_generation.id)}
+                            class="btn ghost ms-auto"
+                            onclick={() => (show_dialog_deleted = true)}
                         >
                             <TrashIcon --size="1.2rem" />Supprimer</button
                         >
@@ -283,4 +285,30 @@
             is_prompts_open = false;
         }}
     />
+</Dialog>
+
+<Dialog
+    is_open={show_dialog_deleted}
+    onrequestclose={() => (show_dialog_deleted = false)}
+    position="center"
+    --width="30rem"
+    --max-width="90%"
+>
+    <div class="flex flex-col items-center gap-4">
+        <div class="text-lg font-semibold">Êtes vous sur de vouloir supprimer ce fichier ?</div>
+        <div class="mt-4 flex justify-center gap-4">
+            <button class="btn" onclick={() => (show_dialog_deleted = false)}>non</button>
+            <button
+                class="btn error"
+                onclick={() => {
+                    if (current_generation) {
+                        delete_file(current_generation.id);
+                        show_dialog_deleted = false;
+                    }
+                }}>Oui</button
+            >
+        </div>
+
+        <div class=" text-error">Cette action sera irréversible</div>
+    </div>
 </Dialog>
