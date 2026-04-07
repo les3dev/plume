@@ -25,6 +25,7 @@
     import {remove} from '@tauri-apps/plugin-fs';
     import {page} from '$app/state';
     import TrashIcon from '$lib/icons/TrashIcon.svelte';
+    import ActionButton from '$lib/widgets/ActionButton.svelte';
 
     const meeting_context = get_meeting_context();
     const settings_context = get_settings_context();
@@ -206,12 +207,22 @@
                         >
                             <PenIcon --size="1.2rem" /> Éditer
                         </button>
-                        <button
+                        <ActionButton
                             class="btn ghost ms-auto"
-                            onclick={() => (show_dialog_deleted = true)}
+                            confirm={{
+                                title: 'Êtes-vous sûr⋅e ?',
+                                description:
+                                    'Une fois supprimé, le fichier ne pourra pas être récupéré.',
+                                button_class: 'btn error',
+                            }}
+                            onaction={async () => {
+                                if (current_generation) {
+                                    delete_file(current_generation.id);
+                                }
+                            }}
                         >
-                            <TrashIcon --size="1.2rem" />Supprimer</button
-                        >
+                            <TrashIcon --size="1.2rem" />Supprimer
+                        </ActionButton>
                     {/if}
                 {/if}
             </div>
@@ -285,30 +296,4 @@
             is_prompts_open = false;
         }}
     />
-</Dialog>
-
-<Dialog
-    is_open={show_dialog_deleted}
-    onrequestclose={() => (show_dialog_deleted = false)}
-    position="center"
-    --width="30rem"
-    --max-width="90%"
->
-    <div class="flex flex-col items-center gap-4">
-        <div class="text-lg font-semibold">Êtes vous sur de vouloir supprimer ce fichier ?</div>
-        <div class="mt-4 flex justify-center gap-4">
-            <button class="btn" onclick={() => (show_dialog_deleted = false)}>non</button>
-            <button
-                class="btn error"
-                onclick={() => {
-                    if (current_generation) {
-                        delete_file(current_generation.id);
-                        show_dialog_deleted = false;
-                    }
-                }}>Oui</button
-            >
-        </div>
-
-        <div class=" text-error">Cette action sera irréversible</div>
-    </div>
 </Dialog>
