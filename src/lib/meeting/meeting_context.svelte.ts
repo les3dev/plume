@@ -51,6 +51,38 @@ class MeetingContext {
                   .join('\n\n'),
     );
 
+    speaking_time_by_speaker = $derived.by(() => {
+        if (this.transcript instanceof Error || this.transcript.length === 0) {
+            return [];
+        }
+
+        const total_duration = this.transcript_timer.value;
+        const total_seconds =
+            parseInt(total_duration.split(':')[0] || '0') * 3600 +
+            parseInt(total_duration.split(':')[1] || '0') * 60 +
+            parseInt(total_duration.split(':')[2] || '0');
+
+        if (total_seconds === 0) return [];
+
+        const speaker_time: Record<number, number> = {};
+        for (const block of this.transcript) {
+            if (block.end !== undefined) {
+                speaker_time[block.speaker] =
+                    (speaker_time[block.speaker] || 0) + (block.end - block.start);
+            }
+        }
+
+        return Object.entries(speaker_time)
+            .map(([speaker, time]) => ({
+                speaker: parseInt(speaker),
+                name:
+                    this.speaker_names.data[parseInt(speaker)] ??
+                    `Speaker ${parseInt(speaker) + 1}`,
+                percentage: Math.round((time / total_seconds) * 100),
+            }))
+            .sort((a, b) => b.percentage - a.percentage);
+    });
+
     load_meeting = async (folder_name: string, prompts: Prompt[], selected_prompt_id?: string) => {
         this.folder_name = folder_name;
         const parts = folder_name.split(' ');

@@ -112,6 +112,7 @@ export type TranscriptBlock = {
     speaker: number;
     text: string;
     start: number;
+    end?: number;
 };
 
 export const generate_transcript = async (path: string, api_key: string) => {
@@ -164,11 +165,13 @@ export const generate_transcript = async (path: string, api_key: string) => {
         const last = blocks[blocks.length - 1];
         if (last && last.speaker === word.speaker) {
             last.text += ' ' + word.punctuated_word;
+            last.end = word.end;
         } else {
             blocks.push({
                 speaker: word.speaker ?? -1,
                 text: word.punctuated_word ?? '',
                 start: word.start,
+                end: word.end,
             });
         }
     }

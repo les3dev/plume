@@ -18,6 +18,12 @@
 
 <div class="flex h-full flex-col px-2">
     <div class="self-end px-4 text-sm text-fg-1">
+        {#if meeting.speaking_time_by_speaker.length > 0}
+            {#each meeting.speaking_time_by_speaker as speaker, i}
+                {speaker.name}: {speaker.percentage}%{#if i < meeting.speaking_time_by_speaker.length - 1},{/if}
+            {/each}
+            |
+        {/if}
         Durée totale : {duration}
         {meeting.speaker_names.saving ? '⌛' : '✅'}
     </div>
