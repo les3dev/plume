@@ -1,5 +1,6 @@
 import {catch_error} from '$lib/helpers/catch_error';
 import {readFile} from '@tauri-apps/plugin-fs';
+import {Duration} from 'luxon';
 
 interface DeepgramListenResponse {
     metadata: {
@@ -115,6 +116,16 @@ export type TranscriptBlock = {
     end?: number;
 };
 
+export const format_timestamp = (seconds: number): string => {
+    const total_seconds = Math.max(0, Math.round(seconds));
+    const duration = Duration.fromMillis(total_seconds * 1000);
+    return duration.as('hours') >= 1
+        ? duration.toFormat('h:mm:ss')
+        : duration.toFormat('mm:ss');
+};
+
+const timestamp_prefix_regex = /^(?:(\d+):)?(\d{1,2}):(\d{2})\s+/;
+
 export const generate_transcript = async (path: string, api_key: string) => {
     const ext = path.split('.').pop()?.toLowerCase();
     const content_type = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : null;
@@ -184,25 +195,34 @@ export const parse_transcript_text = (
     const texts = text.split('\n\n');
     let blocks: TranscriptBlock[] = [];
     let speaker_names: Record<number, string> = {};
-    let index = 0;
     for (const text of texts) {
         if (!text.trim()) {
             continue;
         }
-        const colon_index = text.indexOf(':');
-        const speaker_part = text.slice(0, colon_index);
-        const text_part = text.slice(colon_index + 2);
-        if (text.startsWith('Speaker')) {
+        let start = 0;
+        let rest = text;
+        const timestamp_match = text.match(timestamp_prefix_regex);
+        if (timestamp_match) {
+            const hours = timestamp_match[1] ? parseInt(timestamp_match[1]) : 0;
+            const minutes = parseInt(timestamp_match[2]);
+            const seconds = parseInt(timestamp_match[3]);
+            start = hours * 3600 + minutes * 60 + seconds;
+            rest = text.slice(timestamp_match[0].length);
+        }
+        const colon_index = rest.indexOf(':');
+        const speaker_part = rest.slice(0, colon_index);
+        const text_part = rest.slice(colon_index + 2);
+        if (rest.startsWith('Speaker')) {
             const speaker = parseInt(speaker_part.replace('Speaker ', '')) - 1;
-            blocks.push({speaker, text: text_part, start: index});
+            blocks.push({speaker, text: text_part, start});
         } else {
             const speaker_entries = Object.entries(speaker_names);
             const speaker = speaker_entries.find(([_, name]) => name === speaker_part);
             if (!speaker) {
                 speaker_names[speaker_entries.length] = speaker_part;
-                blocks.push({speaker: speaker_entries.length, text: text_part, start: index});
+                blocks.push({speaker: speaker_entries.length, text: text_part, start});
             } else {
-                blocks.push({speaker: parseInt(speaker[0]), text: text_part, start: index});
+                blocks.push({speaker: parseInt(speaker[0]), text: text_part, start});
             }
         }
     }

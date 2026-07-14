@@ -3,6 +3,7 @@ import {generate_summary} from '$lib/prompt/generate_summary';
 import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {
+    format_timestamp,
     generate_transcript,
     parse_transcript_text,
     type TranscriptBlock,
@@ -47,7 +48,7 @@ class MeetingContext {
             : this.transcript
                   .map(
                       (s) =>
-                          `${this.speaker_names.data[s.speaker] ?? `Speaker ${s.speaker + 1}`}: ${s.text}`,
+                          `${format_timestamp(s.start)} ${this.speaker_names.data[s.speaker] ?? `Speaker ${s.speaker + 1}`}: ${s.text}`,
                   )
                   .join('\n\n'),
     );
