@@ -58,30 +58,44 @@ class MeetingContext {
             return [];
         }
 
-        const total_duration = this.transcript_timer.value;
-        const total_seconds =
-            parseInt(total_duration.split(':')[0] || '0') * 3600 +
-            parseInt(total_duration.split(':')[1] || '0') * 60 +
-            parseInt(total_duration.split(':')[2] || '0');
-
-        if (total_seconds === 0) return [];
-
         const speaker_time: Record<number, number> = {};
-        for (const block of this.transcript) {
-            if (block.end !== undefined) {
-                speaker_time[block.speaker] =
-                    (speaker_time[block.speaker] || 0) + (block.end - block.start);
-            }
+        for (let i = 0; i < this.transcript.length; i++) {
+            const block = this.transcript[i];
+            // A reloaded transcript has no `end` (only block starts are persisted), so
+            // approximate it with the start of the next speaker turn.
+            const end = block.end ?? this.transcript[i + 1]?.start ?? block.start;
+            speaker_time[block.speaker] =
+                (speaker_time[block.speaker] || 0) + Math.max(0, end - block.start);
         }
 
-        return Object.entries(speaker_time)
-            .map(([speaker, time]) => ({
+        const total_speaking_time = Object.values(speaker_time).reduce(
+            (sum, time) => sum + time,
+            0,
+        );
+        if (total_speaking_time === 0) return [];
+
+        // Round to whole percentages while keeping the total at exactly 100
+        // (largest-remainder method), instead of rounding each entry independently.
+        const entries = Object.entries(speaker_time).map(([speaker, time]) => {
+            const exact_percentage = (time / total_speaking_time) * 100;
+            return {
                 speaker: parseInt(speaker),
                 name:
                     this.speaker_names.data[parseInt(speaker)] ??
                     `Speaker ${parseInt(speaker) + 1}`,
-                percentage: Math.round((time / total_seconds) * 100),
-            }))
+                percentage: Math.floor(exact_percentage),
+                remainder: exact_percentage - Math.floor(exact_percentage),
+            };
+        });
+        let leftover = 100 - entries.reduce((sum, entry) => sum + entry.percentage, 0);
+        for (const entry of [...entries].sort((a, b) => b.remainder - a.remainder)) {
+            if (leftover <= 0) break;
+            entry.percentage += 1;
+            leftover -= 1;
+        }
+
+        return entries
+            .map(({speaker, name, percentage}) => ({speaker, name, percentage}))
             .sort((a, b) => b.percentage - a.percentage);
     });
 
