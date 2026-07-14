@@ -20,6 +20,7 @@ class MeetingContext {
     audio_raw_path = $state<string>();
     audio_asset_path = $state<string>();
     transcript = $state<TranscriptBlock[] | Error>([]);
+    has_transcript_file = $state(false);
     start_recording_time = $state<Date>();
     recording_duration = $state<string>();
     transcript_timer = reactive_timer();
@@ -110,6 +111,7 @@ class MeetingContext {
 
         const transcript_path = `${folder_path}/transcript.txt`;
         const transcript_exists = await exists(transcript_path);
+        this.has_transcript_file = transcript_exists;
         if (transcript_exists) {
             const text = await readTextFile(transcript_path);
             const {blocks, speaker_names} = parse_transcript_text(text);
@@ -194,6 +196,7 @@ class MeetingContext {
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
         this.transcript = [];
+        this.has_transcript_file = false;
         this.ai_tabs = [];
         this.selected_ai_tab = 0;
         this.is_generating = false;

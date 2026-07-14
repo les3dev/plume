@@ -127,7 +127,7 @@
                 > pour enregistrer vos clés API localement.
             </div>
         </div>
-    {:else if meeting_context.audio_asset_path === undefined}
+    {:else if meeting_context.audio_asset_path === undefined && !meeting_context.has_transcript_file}
         <div class="flex grow flex-col items-center justify-center gap-14">
             <SuperRecorder
                 onstart={() => (is_recording = true)}
@@ -149,6 +149,26 @@
                 />
             {/if}
         </div>
+    {:else if meeting_context.audio_asset_path === undefined && meeting_context.has_transcript_file}
+        {#if meeting_context.transcript instanceof Error}
+            <div class="m-auto text-error">
+                Erreur de transcript: {meeting_context.transcript.message}
+            </div>
+        {:else}
+            <div class="flex grow flex-col overflow-hidden">
+                <div class="flex gap-2 px-4 pb-2">
+                    <button class="btn ghost" onclick={copy}
+                        ><CopyIcon --size="1.2rem" />Copier</button
+                    >
+                </div>
+                <div class="flex grow flex-col overflow-auto">
+                    <TranscriptEditor
+                        transcript={meeting_context.transcript}
+                        duration={meeting_context.transcript_timer.value}
+                    />
+                </div>
+            </div>
+        {/if}
     {:else if meeting_context.transcript instanceof Error}
         <div class="m-auto text-error">
             Erreur de transcript: {meeting_context.transcript.message}
@@ -290,7 +310,8 @@
 >
     <PromptDialog
         used_prompts={meeting_context.ai_tabs}
-        can_generate={meeting_context.audio_asset_path !== undefined}
+        can_generate={meeting_context.audio_asset_path !== undefined ||
+            meeting_context.transcript_text.length > 0}
         ongenerate={(prompt) => {
             meeting_context.generate(prompt, folder_path);
             is_prompts_open = false;
