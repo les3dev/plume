@@ -54,6 +54,7 @@
                 );
                 return {
                     ...folder,
+                    simple_title: folder.title,
                     title: folder.title.replace(regex, `<span class="text-primary">$1</span>`),
                 };
             })
@@ -127,8 +128,9 @@
                 <button
                     class="btn ghost w-full py-6!"
                     onclick={() => goto(`/meeting/${encodeURIComponent(folder.folder_name)}`)}
+                    title={`${folder.simple_title} - ${folder.date.toFormat('dd/MM/yyyy HH:mm')}`}
                 >
-                    <span class="grow text-start font-serif text-lg font-semibold"
+                    <span class="grow truncate text-start font-serif text-lg font-semibold"
                         >{@html folder.title}</span
                     >
                     <span class="text-sm font-normal text-fg-2"
