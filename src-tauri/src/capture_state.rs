@@ -16,6 +16,9 @@ pub struct CaptureState {
     pub mic_buf: Arc<Mutex<AudioBuffer>>,
     pub app_handle: Mutex<Option<AppHandle>>,
     pub unexpected_stop: Mutex<bool>,
+    pub dump_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
 }
+
+pub const DUMP_INTERVAL_SECS: u64 = 30;
 
 pub const TARGET_RATE: u32 = 16_000;

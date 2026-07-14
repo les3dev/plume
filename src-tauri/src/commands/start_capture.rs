@@ -1,14 +1,17 @@
 use crate::{
     audio::audio_buffer::AudioBuffer,
-    capture_state::{CaptureState, SafeStream},
+    audio::mix::mix_and_write,
+    capture_state::{CaptureState, SafeStream, DUMP_INTERVAL_SECS, TARGET_RATE},
 };
 use audio_capture::AudioCapture;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use tauri::{Emitter, State};
 
 #[tauri::command]
-pub fn start_capture(state: State<CaptureState>) -> Result<(), String> {
+pub fn start_capture(state: State<CaptureState>, folder_path: String) -> Result<(), String> {
     if state.sys_engine.lock().unwrap().is_some() {
         return Err("Already capturing".into());
     }
@@ -72,6 +75,27 @@ pub fn start_capture(state: State<CaptureState>) -> Result<(), String> {
 
     stream.play().map_err(|e| e.to_string())?;
     *state.mic_stream.lock().unwrap() = Some(SafeStream(stream));
+
+    let dump_sys_buf = Arc::clone(&state.sys_buf);
+    let dump_mic_buf = Arc::clone(&state.mic_buf);
+    let dump_path = PathBuf::from(folder_path).join("capture.wav");
+
+    let dump_task = tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(DUMP_INTERVAL_SECS));
+        interval.tick().await; // first tick fires immediately, skip it
+
+        loop {
+            interval.tick().await;
+            let sys_buf = Arc::clone(&dump_sys_buf);
+            let mic_buf = Arc::clone(&dump_mic_buf);
+            let path = dump_path.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                mix_and_write(&sys_buf, &mic_buf, &path, TARGET_RATE)
+            })
+            .await;
+        }
+    });
+    *state.dump_task.lock().unwrap() = Some(dump_task);
 
     Ok(())
 }

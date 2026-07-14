@@ -84,7 +84,9 @@
 
     const toggle_capture = async () => {
         if (capture_state === 'initial') {
-            const error = await catch_error(() => invoke('start_capture'));
+            const error = await catch_error(() =>
+                invoke('start_capture', {folderPath: folder_path}),
+            );
             if (error instanceof Error) {
                 error_message = error.message;
                 return;
