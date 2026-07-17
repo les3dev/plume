@@ -26,6 +26,7 @@
     import {page} from '$app/state';
     import TrashIcon from '$lib/icons/TrashIcon.svelte';
     import ActionButton from '$lib/widgets/ActionButton.svelte';
+    import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
 
     const meeting_context = get_meeting_context();
     const settings_context = get_settings_context();
@@ -160,6 +161,18 @@
                     <button class="btn ghost" onclick={copy}
                         ><CopyIcon --size="1.2rem" />Copier</button
                     >
+                    {#if settings_context.openrouter_key}
+                        <button
+                            class="btn ghost"
+                            disabled={meeting_context.is_identifying_speakers}
+                            onclick={() => meeting_context.identify_speakers(folder_path)}
+                        >
+                            <SparklesIcon --size="1.2rem" />
+                            {meeting_context.is_identifying_speakers
+                                ? 'Identification en cours...'
+                                : 'Identifier les speakers'}
+                        </button>
+                    {/if}
                 </div>
                 <div class="flex grow flex-col overflow-auto">
                     <TranscriptEditor
@@ -199,6 +212,18 @@
         <div class="flex grow flex-col overflow-hidden">
             <div class="flex gap-2 px-4 pb-2">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
+                {#if meeting_context.tab_type === 'transcript' && settings_context.openrouter_key}
+                    <button
+                        class="btn ghost"
+                        disabled={meeting_context.is_identifying_speakers}
+                        onclick={() => meeting_context.identify_speakers(folder_path)}
+                    >
+                        <SparklesIcon --size="1.2rem" />
+                        {meeting_context.is_identifying_speakers
+                            ? 'Identification en cours...'
+                            : 'Identifier les speakers'}
+                    </button>
+                {/if}
 
                 {#if meeting_context.ai_tabs.length > 0}
                     {@const current_generation =

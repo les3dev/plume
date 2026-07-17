@@ -4,23 +4,23 @@ export const ai_models = [
         url: 'openai/gpt-5-mini',
     },
     {
-        title: 'Gemini 2.0 Flash',
-        url: 'google/gemini-2.0-flash-001',
+        title: 'Gemini 3.5 Flash',
+        url: 'google/gemini-3.5-flash',
     },
     {
-        title: 'Claude Haiku 3.5',
-        url: 'anthropic/claude-3-5-haiku',
+        title: 'Claude Haiku 4.5',
+        url: 'anthropic/claude-haiku-4.5',
     },
     {
         title: 'Nemotron 3 Super 120B (free)',
         url: 'nvidia/nemotron-3-super-120b-a12b:free',
     },
     {
-        title: 'DeepSeek R1',
-        url: 'deepseek/deepseek-r1:free',
+        title: 'DeepSeek R1 0528',
+        url: 'deepseek/deepseek-r1-0528',
     },
     {
-        title: 'Step 3.5 Flash (free)',
-        url: 'stepfun/step-3.5-flash:free',
+        title: 'Step 3.7 Flash',
+        url: 'stepfun/step-3.7-flash',
     },
 ] as const;

@@ -110,7 +110,8 @@ interface DeepgramListenResponse {
 }
 
 export type TranscriptBlock = {
-    speaker: number;
+    /** Display name of the speaker, e.g. the default `Speaker 1` or a custom name. */
+    speaker: string;
     text: string;
     start: number;
     end?: number;
@@ -119,10 +120,11 @@ export type TranscriptBlock = {
 export const format_timestamp = (seconds: number): string => {
     const total_seconds = Math.max(0, Math.round(seconds));
     const duration = Duration.fromMillis(total_seconds * 1000);
-    return duration.as('hours') >= 1
-        ? duration.toFormat('h:mm:ss')
-        : duration.toFormat('mm:ss');
+    return duration.as('hours') >= 1 ? duration.toFormat('h:mm:ss') : duration.toFormat('mm:ss');
 };
+
+/** Default display name for a 0-indexed diarization speaker number. */
+export const default_speaker_name = (speaker: number): string => `Speaker ${speaker + 1}`;
 
 const timestamp_prefix_regex = /^(?:(\d+):)?(\d{1,2}):(\d{2})\s+/;
 
@@ -173,13 +175,14 @@ export const generate_transcript = async (path: string, api_key: string) => {
     const words = best_channel.alternatives[0].words;
     const blocks: TranscriptBlock[] = [];
     for (const word of words) {
+        const speaker = default_speaker_name(word.speaker ?? 0);
         const last = blocks[blocks.length - 1];
-        if (last && last.speaker === word.speaker) {
+        if (last && last.speaker === speaker) {
             last.text += ' ' + word.punctuated_word;
             last.end = word.end;
         } else {
             blocks.push({
-                speaker: word.speaker ?? -1,
+                speaker,
                 text: word.punctuated_word ?? '',
                 start: word.start,
                 end: word.end,
@@ -189,42 +192,42 @@ export const generate_transcript = async (path: string, api_key: string) => {
     return blocks;
 };
 
-export const parse_transcript_text = (
-    text: string,
-): {blocks: TranscriptBlock[]; speaker_names: Record<number, string>} => {
-    const texts = text.split('\n\n');
-    let blocks: TranscriptBlock[] = [];
-    let speaker_names: Record<number, string> = {};
-    for (const text of texts) {
-        if (!text.trim()) {
-            continue;
-        }
+/**
+ * Serialize transcript blocks to the persisted text format. Each block is one
+ * `mm:ss name: message` line (blocks separated by a blank line), where the first
+ * `:` belongs to the timestamp and the next `:` starts the message.
+ */
+export const serialize_transcript = (blocks: TranscriptBlock[]): string =>
+    blocks
+        .map((block) => `${format_timestamp(block.start)} ${block.speaker}: ${block.text}`)
+        .join('\n\n');
+
+/** Parse the persisted text format back into transcript blocks (inverse of {@link serialize_transcript}). */
+export const parse_transcript_text = (text: string): TranscriptBlock[] => {
+    const blocks: TranscriptBlock[] = [];
+    for (const chunk of text.split('\n\n')) {
+        if (!chunk.trim()) continue;
+
         let start = 0;
-        let rest = text;
-        const timestamp_match = text.match(timestamp_prefix_regex);
+        let rest = chunk;
+        const timestamp_match = chunk.match(timestamp_prefix_regex);
         if (timestamp_match) {
             const hours = timestamp_match[1] ? parseInt(timestamp_match[1]) : 0;
             const minutes = parseInt(timestamp_match[2]);
             const seconds = parseInt(timestamp_match[3]);
             start = hours * 3600 + minutes * 60 + seconds;
-            rest = text.slice(timestamp_match[0].length);
+            rest = chunk.slice(timestamp_match[0].length);
         }
+
+        // The name ends at the first `:` after the timestamp; the message is the rest
+        // (which may itself contain colons).
         const colon_index = rest.indexOf(':');
-        const speaker_part = rest.slice(0, colon_index);
-        const text_part = rest.slice(colon_index + 2);
-        if (rest.startsWith('Speaker')) {
-            const speaker = parseInt(speaker_part.replace('Speaker ', '')) - 1;
-            blocks.push({speaker, text: text_part, start});
-        } else {
-            const speaker_entries = Object.entries(speaker_names);
-            const speaker = speaker_entries.find(([_, name]) => name === speaker_part);
-            if (!speaker) {
-                speaker_names[speaker_entries.length] = speaker_part;
-                blocks.push({speaker: speaker_entries.length, text: text_part, start});
-            } else {
-                blocks.push({speaker: parseInt(speaker[0]), text: text_part, start});
-            }
-        }
+        if (colon_index === -1) continue;
+        blocks.push({
+            speaker: rest.slice(0, colon_index).trim(),
+            text: rest.slice(colon_index + 1).trim(),
+            start,
+        });
     }
-    return {blocks, speaker_names};
+    return blocks;
 };

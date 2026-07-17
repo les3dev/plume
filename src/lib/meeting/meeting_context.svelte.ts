@@ -3,16 +3,17 @@ import {generate_summary} from '$lib/prompt/generate_summary';
 import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {
-    format_timestamp,
+    default_speaker_name,
     generate_transcript,
     parse_transcript_text,
+    serialize_transcript,
     type TranscriptBlock,
 } from '$lib/transcribe/generate_transcript';
+import {identify_speakers as run_speaker_identification} from '$lib/transcribe/identify_speakers';
 import {convertFileSrc} from '@tauri-apps/api/core';
 import {exists, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
-import {debounced} from '$lib/helpers/debounced.svelte';
 
 class MeetingContext {
     #settings = get_settings_context();
@@ -32,33 +33,41 @@ class MeetingContext {
     ai_tabs = $state<{id: string; ai_generation: string}[]>([]);
     selected_ai_tab = $state(0);
     is_generating = $state(false);
-
-    speaker_names = debounced(
-        () => ({}) as Record<number, string>,
-        async () => {
-            console.log('Saving new transcript', this.speaker_names.data, this.transcript_text);
-            const folder_path = `${this.#settings.save_path}/${this.folder_name}`;
-            await writeTextFile(`${folder_path}/transcript.txt`, this.transcript_text);
-        },
-    );
+    is_identifying_speakers = $state(false);
+    is_saving_transcript = $state(false);
+    #save_timer: ReturnType<typeof setTimeout> | undefined;
 
     transcript_text = $derived(
-        this.transcript instanceof Error
-            ? ''
-            : this.transcript
-                  .map(
-                      (s) =>
-                          `${format_timestamp(s.start)} ${this.speaker_names.data[s.speaker] ?? `Speaker ${s.speaker + 1}`}: ${s.text}`,
-                  )
-                  .join('\n\n'),
+        this.transcript instanceof Error ? '' : serialize_transcript(this.transcript),
     );
+
+    /** Persist the transcript to disk after a short debounce (e.g. on speaker rename). */
+    #save_transcript_soon = () => {
+        if (!this.#settings.save_path) return;
+        this.is_saving_transcript = true;
+        clearTimeout(this.#save_timer);
+        const folder_path = `${this.#settings.save_path}/${this.folder_name}`;
+        this.#save_timer = setTimeout(async () => {
+            await writeTextFile(`${folder_path}/transcript.txt`, this.transcript_text);
+            this.is_saving_transcript = false;
+        }, 1000);
+    };
+
+    /** Rename a speaker across every block that currently uses `old_name`. */
+    rename_speaker = (old_name: string, new_name: string) => {
+        if (this.transcript instanceof Error || old_name === new_name) return;
+        for (const block of this.transcript) {
+            if (block.speaker === old_name) block.speaker = new_name;
+        }
+        this.#save_transcript_soon();
+    };
 
     speaking_time_by_speaker = $derived.by(() => {
         if (this.transcript instanceof Error || this.transcript.length === 0) {
             return [];
         }
 
-        const speaker_time: Record<number, number> = {};
+        const speaker_time: Record<string, number> = {};
         for (let i = 0; i < this.transcript.length; i++) {
             const block = this.transcript[i];
             // A reloaded transcript has no `end` (only block starts are persisted), so
@@ -76,13 +85,10 @@ class MeetingContext {
 
         // Round to whole percentages while keeping the total at exactly 100
         // (largest-remainder method), instead of rounding each entry independently.
-        const entries = Object.entries(speaker_time).map(([speaker, time]) => {
+        const entries = Object.entries(speaker_time).map(([name, time]) => {
             const exact_percentage = (time / total_speaking_time) * 100;
             return {
-                speaker: parseInt(speaker),
-                name:
-                    this.speaker_names.data[parseInt(speaker)] ??
-                    `Speaker ${parseInt(speaker) + 1}`,
+                name,
                 percentage: Math.floor(exact_percentage),
                 remainder: exact_percentage - Math.floor(exact_percentage),
             };
@@ -95,7 +101,7 @@ class MeetingContext {
         }
 
         return entries
-            .map(({speaker, name, percentage}) => ({speaker, name, percentage}))
+            .map(({name, percentage}) => ({name, percentage}))
             .sort((a, b) => b.percentage - a.percentage);
     });
 
@@ -129,11 +135,7 @@ class MeetingContext {
         this.has_transcript_file = transcript_exists;
         if (transcript_exists) {
             const text = await readTextFile(transcript_path);
-            const {blocks, speaker_names} = parse_transcript_text(text);
-            this.transcript = blocks;
-            for (const [index, name] of Object.entries(speaker_names)) {
-                this.speaker_names.data[index as any] = name;
-            }
+            this.transcript = parse_transcript_text(text);
         }
 
         for (const prompt of prompt_files) {
@@ -167,6 +169,44 @@ class MeetingContext {
         }
         this.transcript_timer.stop();
         await notify(`Transcription de "${this.meeting_name}" terminée !`);
+    };
+
+    identify_speakers = async (folder_path: string) => {
+        if (
+            this.transcript instanceof Error ||
+            this.transcript.length === 0 ||
+            !this.#settings.openrouter_key ||
+            this.is_identifying_speakers
+        )
+            return;
+
+        this.is_identifying_speakers = true;
+        const labels = await run_speaker_identification(
+            this.transcript_text,
+            this.#settings.openrouter_key,
+            this.#settings.speaker_identification_model,
+        );
+        console.log('Speaker identification result:', labels);
+        if (labels instanceof Error) {
+            console.error('Speaker identification failed', labels);
+        } else if (!(this.transcript instanceof Error)) {
+            let has_new_label = false;
+            for (const [speaker, label] of Object.entries(labels)) {
+                // Only rename speakers still on their default "Speaker N" placeholder,
+                // so a name the user (or a previous run) already assigned is never lost.
+                const default_name = default_speaker_name(parseInt(speaker));
+                for (const block of this.transcript) {
+                    if (block.speaker === default_name) {
+                        block.speaker = label;
+                        has_new_label = true;
+                    }
+                }
+            }
+            if (has_new_label) {
+                await writeTextFile(`${folder_path}/transcript.txt`, this.transcript_text);
+            }
+        }
+        this.is_identifying_speakers = false;
     };
 
     generate = async (prompt: Prompt, folder_path: string) => {

@@ -14,6 +14,7 @@
     let openrouter_key = $state('');
     let deepgram_key = $state('');
     let model = $state(settings.model);
+    let speaker_identification_model = $state(settings.speaker_identification_model);
     let save_path = $state('');
     let default_save_path = $state('');
 
@@ -21,6 +22,7 @@
         openrouter_key = settings.openrouter_key ?? '';
         deepgram_key = settings.deepgram_key ?? '';
         model = settings.model;
+        speaker_identification_model = settings.speaker_identification_model;
     });
 
     $effect(() => {
@@ -103,6 +105,36 @@
                     <button class="btn" onclick={() => settings.save_model(model)}
                         >Sauvegarder
                     </button>
+                </div>
+
+                <div class="flex flex-col gap-3 border-b border-bg-2 pb-6">
+                    <label for="speaker-model" class="cursor-pointer text-sm font-medium">
+                        Modèle d'identification des speakers
+                    </label>
+                    <select
+                        id="speaker-model"
+                        class="cursor-pointer"
+                        bind:value={speaker_identification_model}
+                    >
+                        {#each ai_models as model}
+                            <option value={model.url}>{model.title}</option>
+                        {/each}
+                    </select>
+                    <div class="flex gap-3">
+                        <button
+                            class="btn"
+                            onclick={() =>
+                                settings.save_speaker_identification_model(
+                                    speaker_identification_model,
+                                )}
+                        >
+                            Sauvegarder
+                        </button>
+                    </div>
+                    <p class="text-xs text-fg-1">
+                        Modèle utilisé pour essayer de deviner automatiquement le nom ou le rôle de
+                        chaque speaker après une transcription.
+                    </p>
                 </div>
 
                 <div class="flex flex-col gap-3">

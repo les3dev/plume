@@ -20,7 +20,7 @@
             |
         {/if}
         Durée totale : {duration}
-        {meeting.speaker_names.saving ? '⌛' : '✅'}
+        {meeting.is_saving_transcript ? '⌛' : '✅'}
     </div>
     {#each transcript as block, index (index)}
         <div class="border-b border-bg-1 p-4 last:border-0">
@@ -31,12 +31,8 @@
                         class="h-fit! rounded-none! border-none! bg-transparent! px-0! font-bold!"
                         type="text"
                         bind:value={
-                            () =>
-                                meeting.speaker_names.data[block.speaker] ??
-                                `Speaker ${block.speaker + 1}`,
-                            (newValue) => {
-                                meeting.speaker_names.data[block.speaker] = newValue;
-                            }
+                            () => block.speaker,
+                            (newValue) => meeting.rename_speaker(block.speaker, newValue)
                         }
                     />
                 </p>

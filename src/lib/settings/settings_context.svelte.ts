@@ -1,14 +1,18 @@
 import {browser} from '$app/environment';
+import {ai_models} from '$lib/helpers/ai_models';
 import {StoreContext} from '$lib/helpers/StoreContext';
 import {getContext, setContext} from 'svelte';
 
 const store_path = 'settings.json';
 export type MailClient = 'mailto' | 'gmail' | 'outlook';
 const default_model = 'nvidia/nemotron-3-super-120b-a12b:free';
+const resolve_model = (model: string | null | undefined): string =>
+    model && ai_models.some((ai_model) => ai_model.url === model) ? model : default_model;
 class SettingsContext extends StoreContext {
     openrouter_key = $state<string>();
     deepgram_key = $state<string>();
     model = $state<string>(default_model);
+    speaker_identification_model = $state<string>(default_model);
     mail_client = $state<MailClient | undefined>(undefined);
     save_path = $state<string | undefined>(undefined);
 
@@ -58,7 +62,10 @@ class SettingsContext extends StoreContext {
         this.openrouter_key = (await this.get_from_store<string>('openai_key')) ?? undefined;
         this.deepgram_key = (await this.get_from_store<string>('deepgram_key')) ?? undefined;
         this.mail_client = await this.get_from_store<MailClient>('mail_client');
-        this.model = (await this.get_from_store<string>('model')) ?? default_model;
+        this.model = resolve_model(await this.get_from_store<string>('model'));
+        this.speaker_identification_model = resolve_model(
+            await this.get_from_store<string>('speaker_identification_model'),
+        );
         this.save_path = await this.get_from_store<string>('save_path');
     };
 
@@ -87,6 +94,13 @@ class SettingsContext extends StoreContext {
         if (!browser) return;
         this.model = model;
         await this.set_to_store('model', model);
+        await this.save_store();
+    };
+
+    save_speaker_identification_model = async (model: string) => {
+        if (!browser) return;
+        this.speaker_identification_model = model;
+        await this.set_to_store('speaker_identification_model', model);
         await this.save_store();
     };
 }
