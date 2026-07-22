@@ -5,7 +5,6 @@
     import '@fontsource/source-serif-pro';
     import '@fontsource-variable/bricolage-grotesque';
     import '@fontsource/space-mono';
-    import {set_prompt_context} from '$lib/prompt/prompt_context.svelte';
     import {set_i18n_context} from '$lib/i18n/context.svelte';
     import {set_meetings_context} from '$lib/meetings/meetings_context.svelte';
     import {WebviewWindow} from '@tauri-apps/api/webviewWindow';
@@ -16,7 +15,6 @@
     set_meetings_context();
     set_i18n_context(() => 'en');
     set_meeting_context();
-    set_prompt_context();
 
     const create_new_window = async () => {
         const label = `plume_${Date.now()}`;

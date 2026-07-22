@@ -9,8 +9,6 @@
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {get_meetings_context} from '$lib/meetings/meetings_context.svelte';
     import Dialog from '$lib/widgets/Dialog.svelte';
-    import PromptDialog from '$lib/prompt/PromptDialog.svelte';
-    import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import {parse_folder_name} from '$lib/helpers/parse_folder_name';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
@@ -25,7 +23,6 @@
     let error_message = $state('');
     let is_new_open = $state(false);
     let title_meeting = $state('');
-    let is_prompts_open = $state(false);
 
     $effect(() => {
         console.log('save_path changed:', settings.save_path);
@@ -107,13 +104,6 @@
             title="Create new meeting"
             onclick={() => (is_new_open = true)}><CrossIcon rotate={45} /></button
         >
-        <button
-            class="btn ghost icon"
-            title="Edit prompts"
-            onclick={() => (is_prompts_open = true)}
-        >
-            <SparklesIcon --size="1.2rem" />
-        </button>
         <button class="btn ghost icon" title="Show settings" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
@@ -178,14 +168,4 @@
             </button>
         </div>
     </div>
-</Dialog>
-
-<Dialog
-    is_open={is_prompts_open}
-    onrequestclose={() => (is_prompts_open = false)}
-    position="center"
-    --width="50rem"
-    --max-width="90%"
->
-    <PromptDialog used_prompts={[]} can_generate={false} ongenerate={() => {}} />
 </Dialog>

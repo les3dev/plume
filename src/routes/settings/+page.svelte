@@ -4,7 +4,6 @@
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import InfoIcon from '$lib/icons/InfoIcon.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
-    import type {MailClient} from '$lib/settings/settings_context.svelte';
     import {open as open_dialog} from '@tauri-apps/plugin-dialog';
     import {appDataDir, homeDir} from '@tauri-apps/api/path';
     import {get_i18n_context} from '$lib/i18n/context.svelte';
@@ -13,7 +12,6 @@
     const settings = get_settings_context();
     let openrouter_key = $state('');
     let deepgram_key = $state('');
-    let model = $state(settings.model);
     let speaker_identification_model = $state(settings.speaker_identification_model);
     let save_path = $state('');
     let default_save_path = $state('');
@@ -21,7 +19,6 @@
     $effect(() => {
         openrouter_key = settings.openrouter_key ?? '';
         deepgram_key = settings.deepgram_key ?? '';
-        model = settings.model;
         speaker_identification_model = settings.speaker_identification_model;
     });
 
@@ -95,18 +92,6 @@
                 </div>
             </div>
             <div class="flex flex-col gap-3">
-                <label for="model" class="cursor-pointer text-sm font-medium">Modèle</label>
-                <select id="model" class="cursor-pointer" bind:value={model}>
-                    {#each ai_models as model}
-                        <option value={model.url}>{model.title}</option>
-                    {/each}
-                </select>
-                <div class="flex gap-3">
-                    <button class="btn" onclick={() => settings.save_model(model)}
-                        >Sauvegarder
-                    </button>
-                </div>
-
                 <div class="flex flex-col gap-3 border-b border-bg-2 pb-6">
                     <label for="speaker-model" class="cursor-pointer text-sm font-medium">
                         Modèle d'identification des speakers
@@ -163,20 +148,6 @@
                     </p>
                 </div>
 
-                <div class="flex flex-col gap-3 border-b border-bg-2 pb-6">
-                    <label class="text-sm font-medium" for="mail">Mail par défaut</label>
-                    <select
-                        id="mail"
-                        class="cursor-pointer"
-                        value={settings.mail_client}
-                        onchange={(e) =>
-                            settings.save_mail_client(e.currentTarget.value as MailClient)}
-                    >
-                        <option value="mailto">Choisir</option>
-                        <option value="gmail">Gmail</option>
-                        <option value="outlook">Outlook</option>
-                    </select>
-                </div>
                 <div class="flex flex-col gap-3 border-b border-bg-2 pb-6">
                     <label class="text-sm font-medium" for="save_path">Dossier sauvegarde</label>
                     <input

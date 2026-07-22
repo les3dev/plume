@@ -1,6 +1,4 @@
 import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
-import {generate_summary} from '$lib/prompt/generate_summary';
-import type {Prompt} from '$lib/prompt/prompt_context.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {
     default_speaker_name,
@@ -30,10 +28,6 @@ class MeetingContext {
 
     folder_name = $state('');
 
-    tab_type = $state<'transcript' | 'ai'>('transcript');
-    ai_tabs = $state<{id: string; ai_generation: string}[]>([]);
-    selected_ai_tab = $state(0);
-    is_generating = $state(false);
     is_identifying_speakers = $state(false);
     is_saving_transcript = $state(false);
     #save_timer: ReturnType<typeof setTimeout> | undefined;
@@ -139,20 +133,15 @@ class MeetingContext {
             .sort((a, b) => b.percentage - a.percentage);
     });
 
-    load_meeting = async (folder_name: string, prompts: Prompt[], selected_prompt_id?: string) => {
+    load_meeting = async (folder_name: string) => {
         this.folder_name = folder_name;
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
-        const prompt_files = prompts;
 
         this.meeting_name = title;
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
         this.transcript = [];
-        this.ai_tabs = [];
-        this.selected_ai_tab = 0;
-        this.tab_type = 'transcript';
-        this.is_generating = false;
 
         if (!this.#settings.save_path) return;
         const folder_path = `${this.#settings.save_path}/${folder_name}`;
@@ -170,22 +159,6 @@ class MeetingContext {
         if (transcript_exists) {
             const text = await readTextFile(transcript_path);
             this.transcript = parse_transcript_text(text);
-        }
-
-        for (const prompt of prompt_files) {
-            const prompt_path = `${folder_path}/${prompt.title}.txt`;
-            const prompt_exists = await exists(prompt_path);
-            if (prompt_exists) {
-                const text = await readTextFile(prompt_path);
-                this.ai_tabs.push({id: prompt.id, ai_generation: text});
-            }
-        }
-        if (selected_prompt_id) {
-            const tab = this.ai_tabs.find((tab) => tab.id === selected_prompt_id);
-            if (tab) {
-                this.selected_ai_tab = this.ai_tabs.indexOf(tab);
-                this.tab_type = 'ai';
-            }
         }
     };
 
@@ -243,52 +216,11 @@ class MeetingContext {
         this.is_identifying_speakers = false;
     };
 
-    generate = async (prompt: Prompt, folder_path: string) => {
-        if (
-            this.ai_tabs.some((t) => t.id === prompt.id) ||
-            this.is_generating ||
-            !this.transcript_text
-        )
-            return;
-
-        this.is_generating = true;
-
-        this.ai_tabs.push({id: prompt.id, ai_generation: ''});
-        const tab_index = this.ai_tabs.length - 1;
-        this.selected_ai_tab = tab_index;
-        this.tab_type = 'ai';
-
-        const model = prompt.model ?? this.#settings.model;
-
-        await generate_summary(
-            prompt.prompt,
-            this.transcript_text,
-            this.#settings.openrouter_key,
-            model,
-            this.start_recording_time,
-            this.recording_duration,
-            (delta) => {
-                this.ai_tabs[tab_index].ai_generation += delta;
-            },
-        );
-        this.is_generating = false;
-        if (this.ai_tabs[tab_index].ai_generation) {
-            await writeTextFile(
-                `${folder_path}/${prompt.title}.txt`,
-                this.ai_tabs[tab_index].ai_generation,
-            );
-        }
-        await notify(`"${prompt.title}" généré avec succès !`);
-    };
-
     reset = async () => {
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
         this.transcript = [];
         this.has_transcript_file = false;
-        this.ai_tabs = [];
-        this.selected_ai_tab = 0;
-        this.is_generating = false;
         this.meeting_name = 'Nouvelle réunion';
     };
 }

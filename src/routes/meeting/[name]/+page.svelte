@@ -1,42 +1,27 @@
 <script lang="ts">
-    import Dialog from '$lib/widgets/Dialog.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
     import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
     import Upload from '$lib/upload/Upload.svelte';
     import CopyIcon from '$lib/icons/CopyIcon.svelte';
     import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
-    import CrossIcon from '$lib/icons/CrossIcon.svelte';
-    import PaperPlaneIcon from '$lib/icons/PaperPlaneIcon.svelte';
-    import PromptDialog from '$lib/prompt/PromptDialog.svelte';
-    import {get_prompt_context} from '$lib/prompt/prompt_context.svelte';
     import {goto} from '$app/navigation';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
-    import MarkdownResult from '$lib/prompt/MarkdownResult.svelte';
     import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
-    import {open} from '@tauri-apps/plugin-shell';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {parse_folder_name} from '$lib/helpers/parse_folder_name.js';
     import Popover from '$lib/widgets/Popover.svelte';
     import MicIcon from '$lib/icons/MicIcon.svelte';
-    import PenIcon from '$lib/icons/PenIcon.svelte';
-    import {remove} from '@tauri-apps/plugin-fs';
-    import {page} from '$app/state';
-    import TrashIcon from '$lib/icons/TrashIcon.svelte';
-    import ActionButton from '$lib/widgets/ActionButton.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
 
     const meeting_context = get_meeting_context();
     const settings_context = get_settings_context();
-    const prompts_context = get_prompt_context();
 
     let {params} = $props();
     const folder_name = $derived(decodeURIComponent(params.name));
 
-    let is_prompts_open = $state(false);
-    let mail_error = $state<string>();
     let is_recording = $state(false);
     let is_audio_open = $state(false);
     let show_dialog_deleted = $state(false);
@@ -45,11 +30,9 @@
     const meeting_date = $derived(
         parse_folder_name(folder_name)?.date.toFormat('dd/MM/yyyy HH:mm') ?? '',
     );
-    const current_generation = $derived(meeting_context.ai_tabs[meeting_context.selected_ai_tab]);
 
     $effect(() => {
-        const prompt_id = page.url.searchParams.get('prompt') ?? undefined;
-        meeting_context.load_meeting(folder_name, prompts_context.prompts, prompt_id);
+        meeting_context.load_meeting(folder_name);
     });
 
     meeting_context.on_meeting_renamed = (new_folder_name) => {
@@ -57,37 +40,7 @@
     };
 
     const copy = async () => {
-        if (meeting_context.tab_type === 'ai' && meeting_context.ai_tabs.length > 0) {
-            await navigator.clipboard.writeText(
-                meeting_context.ai_tabs[meeting_context.selected_ai_tab].ai_generation,
-            );
-        } else {
-            await navigator.clipboard.writeText(meeting_context.transcript_text);
-        }
-    };
-
-    const delete_file = async (prompt_id: string) => {
-        const prompt = prompts_context.prompts.find((prompt) => prompt.id === prompt_id);
-        if (prompt) {
-            await remove(`${folder_path}/${prompt.title}.txt`);
-        }
-
-        meeting_context.ai_tabs = meeting_context.ai_tabs.filter((tab) => tab.id !== prompt_id);
-        meeting_context.selected_ai_tab = 0;
-        meeting_context.tab_type = meeting_context.ai_tabs.length > 0 ? 'ai' : 'transcript';
-    };
-
-    const open_mail = (body: string) => {
-        if (!settings_context.mail_client) {
-            mail_error = "Vous n'avez pas choisis de mail par défaut";
-            return;
-        }
-        const urls = {
-            mailto: `mailto:?subject=Compte rendu&body=${encodeURIComponent(body)}`,
-            gmail: `https://mail.google.com/mail/?view=cm&body=${encodeURIComponent(body)}`,
-            outlook: `https://outlook.office.com/mail/deeplink/compose?body=${encodeURIComponent(body)}`,
-        };
-        open(urls[settings_context.mail_client]);
+        await navigator.clipboard.writeText(meeting_context.transcript_text);
     };
 </script>
 
@@ -224,7 +177,7 @@
         <div class="flex grow flex-col overflow-hidden">
             <div class="flex gap-2 px-4 pb-2">
                 <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                {#if meeting_context.tab_type === 'transcript' && settings_context.openrouter_key}
+                {#if settings_context.openrouter_key}
                     <button
                         class="btn ghost"
                         disabled={meeting_context.is_identifying_speakers}
@@ -236,122 +189,13 @@
                             : 'Identifier les speakers'}
                     </button>
                 {/if}
-
-                {#if meeting_context.ai_tabs.length > 0}
-                    {@const current_generation =
-                        meeting_context.ai_tabs[meeting_context.selected_ai_tab]}
-                    {@const prompt = prompts_context.prompts.find(
-                        (p) => p.id === current_generation.id,
-                    )}
-                    {#if prompt?.title === 'Email' && settings_context.mail_client && current_generation.ai_generation}
-                        <button
-                            class="btn ghost"
-                            onclick={() => open_mail(current_generation.ai_generation)}
-                        >
-                            <PaperPlaneIcon --size="1.2rem" />Envoyer
-                        </button>
-                        {#if mail_error}
-                            <p class="text-red-400 text-sm">{mail_error}</p>
-                        {/if}
-                    {/if}
-                    {#if meeting_context.tab_type === 'ai'}
-                        <button
-                            class="btn ghost"
-                            onclick={() =>
-                                goto(
-                                    `/meeting/${encodeURIComponent(folder_name)}/edit?prompt=${meeting_context.ai_tabs[meeting_context.selected_ai_tab].id}`,
-                                )}
-                        >
-                            <PenIcon --size="1.2rem" /> Éditer
-                        </button>
-                        <ActionButton
-                            class="btn ghost ms-auto"
-                            confirm={{
-                                title: 'Êtes-vous sûr⋅e ?',
-                                description:
-                                    'Une fois supprimé, le fichier ne pourra pas être récupéré.',
-                                button_class: 'btn error',
-                            }}
-                            onaction={async () => {
-                                if (current_generation) {
-                                    delete_file(current_generation.id);
-                                }
-                            }}
-                        >
-                            <TrashIcon --size="1.2rem" />Supprimer
-                        </ActionButton>
-                    {/if}
-                {/if}
             </div>
             <div class="flex grow flex-col overflow-auto">
-                {#if meeting_context.tab_type === 'transcript'}
-                    <TranscriptEditor
-                        transcript={meeting_context.transcript}
-                        duration={meeting_context.transcript_timer.value}
-                    />
-                {:else if meeting_context.tab_type === 'ai'}
-                    {#if meeting_context.ai_tabs.length > 0}
-                        <MarkdownResult
-                            markdown={meeting_context.ai_tabs[meeting_context.selected_ai_tab]
-                                .ai_generation}
-                        />
-                    {:else if meeting_context.is_generating}
-                        <p class="text-cen m-auto text-fg-2">Génération en cours...</p>
-                    {/if}
-                {/if}
-            </div>
-        </div>
-        <div class="shrink-0 border-bg-2 p-4">
-            <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2">
-                <button
-                    class="btn {meeting_context.tab_type === 'transcript' ? 'secondary' : 'ghost'}"
-                    onclick={() => (meeting_context.tab_type = 'transcript')}
-                >
-                    Transcription
-                </button>
-                {#each meeting_context.ai_tabs as tab, i}
-                    {@const prompt = prompts_context.prompts.find((p) => p.id === tab.id)}
-                    {#if prompt}
-                        <button
-                            class="btn {meeting_context.selected_ai_tab === i &&
-                            meeting_context.tab_type === 'ai'
-                                ? 'secondary'
-                                : 'ghost'}"
-                            onclick={() => {
-                                meeting_context.selected_ai_tab = i;
-                                meeting_context.tab_type = 'ai';
-                            }}
-                        >
-                            {prompt.title}
-                        </button>
-                    {/if}
-                {/each}
-                <button
-                    class="btn ghost icon"
-                    disabled={meeting_context.is_generating}
-                    onclick={() => (is_prompts_open = true)}
-                >
-                    <CrossIcon rotate={45} --size="1.2rem" />
-                </button>
+                <TranscriptEditor
+                    transcript={meeting_context.transcript}
+                    duration={meeting_context.transcript_timer.value}
+                />
             </div>
         </div>
     {/if}
 </div>
-
-<Dialog
-    is_open={is_prompts_open}
-    onrequestclose={() => (is_prompts_open = false)}
-    position="center"
-    --width="50rem"
-    --max-width="90%"
->
-    <PromptDialog
-        used_prompts={meeting_context.ai_tabs}
-        can_generate={meeting_context.audio_asset_path !== undefined ||
-            meeting_context.transcript_text.length > 0}
-        ongenerate={(prompt) => {
-            meeting_context.generate(prompt, folder_path);
-            is_prompts_open = false;
-        }}
-    />
-</Dialog>
