@@ -9,6 +9,7 @@
     import {getCurrentWindow} from '@tauri-apps/api/window';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
+    import {get_meetings_context} from '$lib/meetings/meetings_context.svelte';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
@@ -18,6 +19,7 @@
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
 
     const meeting_context = get_meeting_context();
+    const meetings_context = get_meetings_context();
     const settings_context = get_settings_context();
 
     let {params} = $props();
@@ -26,11 +28,19 @@
     let is_recording = $state(false);
     let is_audio_open = $state(false);
     let show_dialog_deleted = $state(false);
+    let should_autostart = $state(false);
 
     const folder_path = $derived(`${settings_context.save_path}/${folder_name}`);
     const meeting_date = $derived(
         parse_folder_name(folder_name)?.date.toFormat('dd/MM/yyyy HH:mm') ?? '',
     );
+
+    $effect(() => {
+        if (meetings_context.pending_autostart_folder === folder_name) {
+            meetings_context.pending_autostart_folder = null;
+            should_autostart = true;
+        }
+    });
 
     $effect(() => {
         meeting_context.load_meeting(folder_name);
@@ -131,6 +141,7 @@
                     is_recording = false;
                 }}
                 {folder_path}
+                autostart={should_autostart}
             />
             {#if !is_recording}
                 <Upload

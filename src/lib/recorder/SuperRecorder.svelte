@@ -25,11 +25,15 @@
         ) => void;
         folder_path: string;
         onstart: () => void;
+        /** Start capturing as soon as this component mounts (used when the recording was
+         * kicked off from the tray on a freshly created meeting). */
+        autostart?: boolean;
     };
-    let {onfinish, onstart, folder_path}: Props = $props();
+    let {onfinish, onstart, folder_path, autostart = false}: Props = $props();
 
     let error_message = $state<string>();
     let capture_state = $state<'initial' | 'capturing' | 'saving'>('initial');
+    let has_autostarted = false;
     let timer = reactive_timer();
 
     let unlisten_save: UnlistenFn | undefined;
@@ -105,18 +109,20 @@
     };
 
     $effect(() => {
-        const unlisten_start = listen('tray-start-recording', () => {
-            if (capture_state === 'initial') toggle_capture();
-        });
-
         const unlisten_stop = listen('tray-stop-recording', () => {
             if (capture_state === 'capturing') toggle_capture();
         });
 
         return async () => {
-            (await unlisten_start)();
             (await unlisten_stop)();
         };
+    });
+
+    $effect(() => {
+        if (autostart && !has_autostarted && capture_state === 'initial') {
+            has_autostarted = true;
+            toggle_capture();
+        }
     });
 </script>
 

@@ -17,6 +17,10 @@ class MeetingsContext {
     #settings = get_settings_context();
     error_message = $state('');
     folders = $state<MeetingFolder[]>([]);
+    // Set right before navigating to a freshly created meeting so its page knows
+    // to auto-start the recording once mounted, without relying on the tray
+    // event still being "live" by the time the route has changed.
+    pending_autostart_folder = $state<string | null>(null);
 
     constructor() {
         $effect(() => {
