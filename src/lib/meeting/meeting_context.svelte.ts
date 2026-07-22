@@ -11,9 +11,10 @@ import {
 } from '$lib/transcribe/generate_transcript';
 import {identify_speakers as run_speaker_identification} from '$lib/transcribe/identify_speakers';
 import {convertFileSrc} from '@tauri-apps/api/core';
-import {exists, readTextFile, writeTextFile} from '@tauri-apps/plugin-fs';
+import {exists, readTextFile, rename, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
+import {catch_error} from '$lib/helpers/catch_error';
 
 class MeetingContext {
     #settings = get_settings_context();
@@ -36,6 +37,9 @@ class MeetingContext {
     is_identifying_speakers = $state(false);
     is_saving_transcript = $state(false);
     #save_timer: ReturnType<typeof setTimeout> | undefined;
+    #rename_timer: ReturnType<typeof setTimeout> | undefined;
+    /** Set by the page so it can navigate once the debounced folder rename actually happens. */
+    on_meeting_renamed?: (new_folder_name: string) => void;
 
     transcript_text = $derived(
         this.transcript instanceof Error ? '' : serialize_transcript(this.transcript),
@@ -50,6 +54,36 @@ class MeetingContext {
         this.#save_timer = setTimeout(async () => {
             await writeTextFile(`${folder_path}/transcript.txt`, this.transcript_text);
             this.is_saving_transcript = false;
+        }, 1000);
+    };
+
+    /**
+     * Update the meeting title immediately (like a speaker rename), then rename its folder on
+     * disk after a short debounce, keeping the date prefix intact.
+     */
+    rename_meeting = (new_title: string) => {
+        this.meeting_name = new_title;
+        if (!this.#settings.save_path) return;
+
+        clearTimeout(this.#rename_timer);
+        this.#rename_timer = setTimeout(async () => {
+            const title = new_title.trim();
+            const current_title = this.folder_name.split(' ').slice(1).join(' ');
+            if (!title || title === current_title) return;
+
+            const date_part = this.folder_name.split(' ')[0];
+            const new_folder_name = `${date_part} ${title}`;
+            const old_path = `${this.#settings.save_path}/${this.folder_name}`;
+            const new_path = `${this.#settings.save_path}/${new_folder_name}`;
+
+            const error = await catch_error(() => rename(old_path, new_path));
+            if (error instanceof Error) {
+                console.error('Failed to rename meeting folder', error);
+                return;
+            }
+
+            this.folder_name = new_folder_name;
+            this.on_meeting_renamed?.(new_folder_name);
         }, 1000);
     };
 

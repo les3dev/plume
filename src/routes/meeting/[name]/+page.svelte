@@ -52,6 +52,10 @@
         meeting_context.load_meeting(folder_name, prompts_context.prompts, prompt_id);
     });
 
+    meeting_context.on_meeting_renamed = (new_folder_name) => {
+        goto(`/meeting/${encodeURIComponent(new_folder_name)}`, {replaceState: true});
+    };
+
     const copy = async () => {
         if (meeting_context.tab_type === 'ai' && meeting_context.ai_tabs.length > 0) {
             await navigator.clipboard.writeText(
@@ -93,7 +97,15 @@
             <ChevronIcon />
         </button>
         <div class="me-auto flex flex-wrap items-center font-serif text-lg font-semibold">
-            <span class="me-2">{meeting_context.meeting_name}</span>
+            <input
+                class="me-2 h-fit! rounded-none! border-none! bg-transparent! px-0! font-serif! text-lg! font-semibold!"
+                type="text"
+                size={meeting_context.meeting_name.length || 1}
+                bind:value={
+                    () => meeting_context.meeting_name,
+                    (new_value) => meeting_context.rename_meeting(new_value)
+                }
+            />
             <span class="font-sans text-xs text-fg-2">{meeting_date}</span>
         </div>
         {#if meeting_context.audio_asset_path}
