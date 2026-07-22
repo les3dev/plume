@@ -6,6 +6,7 @@
     import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {goto} from '$app/navigation';
+    import {getCurrentWindow} from '@tauri-apps/api/window';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
@@ -33,10 +34,36 @@
 
     $effect(() => {
         meeting_context.load_meeting(folder_name);
+
+        // Catch renames done outside the app (e.g. from Finder) by re-checking once the
+        // window regains focus, the same way the meeting list refreshes itself.
+        let cancelled = false;
+        let unlisten: (() => void) | undefined;
+        getCurrentWindow()
+            .onFocusChanged(({payload: focused}) => {
+                if (focused) meeting_context.resolve_external_rename(folder_name);
+            })
+            .then((stop_listening) => {
+                if (cancelled) {
+                    stop_listening();
+                } else {
+                    unlisten = stop_listening;
+                }
+            })
+            .catch((error) => console.error('failed to listen for window focus', error));
+
+        return () => {
+            cancelled = true;
+            unlisten?.();
+        };
     });
 
     meeting_context.on_meeting_renamed = (new_folder_name) => {
         goto(`/meeting/${encodeURIComponent(new_folder_name)}`, {replaceState: true});
+    };
+
+    meeting_context.on_meeting_deleted = () => {
+        goto('/', {replaceState: true});
     };
 
     const copy = async () => {

@@ -9,7 +9,7 @@ import {
 } from '$lib/transcribe/generate_transcript';
 import {identify_speakers as run_speaker_identification} from '$lib/transcribe/identify_speakers';
 import {convertFileSrc} from '@tauri-apps/api/core';
-import {exists, readTextFile, rename, writeTextFile} from '@tauri-apps/plugin-fs';
+import {exists, readDir, readTextFile, rename, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
 import {catch_error} from '$lib/helpers/catch_error';
@@ -34,6 +34,8 @@ class MeetingContext {
     #rename_timer: ReturnType<typeof setTimeout> | undefined;
     /** Set by the page so it can navigate once the debounced folder rename actually happens. */
     on_meeting_renamed?: (new_folder_name: string) => void;
+    /** Set by the page so it can navigate away if the folder was removed from outside the app. */
+    on_meeting_deleted?: () => void;
 
     transcript_text = $derived(
         this.transcript instanceof Error ? '' : serialize_transcript(this.transcript),
@@ -79,6 +81,33 @@ class MeetingContext {
             this.folder_name = new_folder_name;
             this.on_meeting_renamed?.(new_folder_name);
         }, 1000);
+    };
+
+    /**
+     * If the folder currently open no longer exists on disk, either follow it (renamed from
+     * outside the app, e.g. via Finder - look for a sibling folder that kept the same date
+     * prefix, the same way `rename_meeting` does for an in-app rename) or, if it's genuinely
+     * gone, let the page navigate away via `on_meeting_deleted`.
+     */
+    resolve_external_rename = async (folder_name: string) => {
+        const save_path = this.#settings.save_path;
+        if (!save_path || folder_name !== this.folder_name) return;
+
+        const folder_path = `${save_path}/${folder_name}`;
+        if (await exists(folder_path)) return;
+
+        const date_part = folder_name.split(' ')[0];
+        const entries = await catch_error(() => readDir(save_path));
+        if (entries instanceof Error) return;
+
+        const candidates = entries.filter(
+            (entry) => entry.isDirectory && entry.name.split(' ')[0] === date_part,
+        );
+        if (candidates.length === 1) {
+            this.on_meeting_renamed?.(candidates[0].name);
+        } else {
+            this.on_meeting_deleted?.();
+        }
     };
 
     /** Rename a speaker across every block that currently uses `old_name`. */

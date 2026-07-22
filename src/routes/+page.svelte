@@ -1,15 +1,11 @@
 <script lang="ts">
     import {goto} from '$app/navigation';
-    import {readDir} from '@tauri-apps/plugin-fs';
     import CrossIcon from '$lib/icons/CrossIcon.svelte';
     import SettingsIcon from '$lib/icons/SettingsIcon.svelte';
     import {get_settings_context} from '$lib/settings/settings_context.svelte';
-    import {catch_error} from '$lib/helpers/catch_error';
-    import {DateTime} from 'luxon';
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {get_meetings_context} from '$lib/meetings/meetings_context.svelte';
     import Dialog from '$lib/widgets/Dialog.svelte';
-    import {parse_folder_name} from '$lib/helpers/parse_folder_name';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
 
@@ -19,20 +15,11 @@
     const folder_path = $derived(`${settings.save_path}`);
 
     let search = $state('');
-    let folders = $state<{path: string; title: string; date: DateTime; folder_name: string}[]>([]);
-    let error_message = $state('');
     let is_new_open = $state(false);
     let title_meeting = $state('');
 
-    $effect(() => {
-        console.log('save_path changed:', settings.save_path);
-        if (settings.save_path) {
-            load_folders(settings.save_path);
-        }
-    });
-
     let filtered_folders = $derived(
-        folders
+        meetings.folders
             .filter((folder) => {
                 if (!folder.date.isValid) {
                     return false;
@@ -57,27 +44,6 @@
             })
             .sort((first, last) => last.date.toMillis() - first.date.toMillis()),
     );
-
-    async function load_folders(path: string) {
-        console.log('save_path', path);
-        const entries = await catch_error(() => readDir(path));
-        console.log('entries', entries);
-        if (entries instanceof Error) {
-            error_message = entries.message;
-            return;
-        }
-        folders = entries
-            .filter((entry) => entry.isDirectory && parse_folder_name(entry.name) !== null)
-            .map((entry) => {
-                const parsed = parse_folder_name(entry.name)!;
-                return {
-                    date: parsed.date,
-                    title: parsed.title,
-                    path: `${path}/${entry.name}`,
-                    folder_name: entry.name,
-                };
-            });
-    }
 </script>
 
 <div class="flex h-screen flex-col">
@@ -109,8 +75,8 @@
         </button>
     </header>
     <div class="flex grow flex-col overflow-auto px-4">
-        {#if error_message}
-            <p class="text-error">{error_message}</p>
+        {#if meetings.error_message}
+            <p class="text-error">{meetings.error_message}</p>
         {:else if filtered_folders.length === 0}
             <p>No folders found.</p>
         {:else}

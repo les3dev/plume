@@ -9,6 +9,7 @@ Plume is a macOS desktop app (Tauri 2 + SvelteKit 5) that records meetings (syst
 ## Commands
 
 Frontend (run from repo root):
+
 - `pnpm dev` — Vite dev server only (no native window; use `pnpm tauri dev` for the full app)
 - `pnpm tauri dev` — run the full Tauri app (builds the Swift dylib + Rust backend + frontend)
 - `pnpm tauri build` — production build/bundle
@@ -18,10 +19,12 @@ Frontend (run from repo root):
 - `pnpm release <version>` — bumps `package.json` version, commits, tags `v<version>`, and pushes (must be on `main`, clean tree, up to date with `origin/main`); the pushed tag triggers `.github/workflows/release.yml` which builds and publishes the Tauri app for `aarch64-apple-darwin` and `x86_64-apple-darwin`
 
 Rust backend (`src-tauri/`):
+
 - `cargo build` / `cargo check` from `src-tauri/` — note the `audio-capture` crate's `build.rs` invokes `swift build` on the `AudioCapture/` package and links the resulting dylib, so Xcode/Swift toolchain must be installed even for a pure Rust build
 - No Rust or Swift test suite exists in this repo currently
 
 Swift package (`AudioCapture/`):
+
 - `./build.sh` — builds the release dylib and copies it to `src-tauri/target/release/` (mirrors what `build.rs` does for debug/release automatically; useful for manually refreshing the dylib)
 - `./test.sh` / `test_capture.swift` — standalone manual test harness for the capture engine, independent of the Tauri app
 

@@ -52,6 +52,15 @@
                 }
             ]
         },
+        {
+            "identifier": "fs:allow-watch",
+            "allow": [
+                {
+                    "path": "$HOME/**"
+                }
+            ]
+        },
+        "fs:allow-unwatch",
         "http:default",
         {
             "identifier": "http:allow-fetch",

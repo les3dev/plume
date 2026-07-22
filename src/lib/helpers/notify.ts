@@ -8,7 +8,7 @@ import {
 export const notify = async (body: string) => {
     const focused = await getCurrentWindow().isFocused();
     if (focused) {
-        return
+        return;
     }
     let permission = await isPermissionGranted();
     console.log('permission:', permission);
