@@ -2,6 +2,7 @@ import {reactive_timer} from '$lib/helpers/reactive_timer.svelte';
 import {get_settings_context} from '$lib/settings/settings_context.svelte';
 import {
     default_speaker_name,
+    format_timestamp,
     generate_transcript,
     parse_transcript_text,
     serialize_transcript,
@@ -14,6 +15,20 @@ import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
 import {catch_error} from '$lib/helpers/catch_error';
 
+/**
+ * Length of an audio file in seconds, read from the media element's metadata. Returns
+ * `undefined` when the file can't be decoded or has no usable duration (e.g. a capture that
+ * was interrupted before its WAV header could be finalized).
+ */
+const read_audio_duration = (asset_path: string): Promise<number | undefined> =>
+    new Promise((resolve) => {
+        const audio = new Audio(asset_path);
+        audio.addEventListener('loadedmetadata', () =>
+            resolve(Number.isFinite(audio.duration) ? audio.duration : undefined),
+        );
+        audio.addEventListener('error', () => resolve(undefined));
+    });
+
 class MeetingContext {
     #settings = get_settings_context();
 
@@ -24,6 +39,8 @@ class MeetingContext {
     has_transcript_file = $state(false);
     start_recording_time = $state<Date>();
     recording_duration = $state<string>();
+    /** Length of `capture.wav` in seconds, once its metadata has been read. */
+    audio_duration = $state<number>();
     transcript_timer = reactive_timer();
 
     folder_name = $state('');
@@ -40,6 +57,30 @@ class MeetingContext {
     transcript_text = $derived(
         this.transcript instanceof Error ? '' : serialize_transcript(this.transcript),
     );
+
+    /**
+     * Read the audio length in the background - it must not hold up loading the transcript,
+     * and a result that lands after the user opened another meeting is simply dropped.
+     */
+    #load_audio_duration = (asset_path: string) => {
+        this.audio_duration = undefined;
+        read_audio_duration(asset_path).then((duration) => {
+            if (this.audio_asset_path === asset_path) this.audio_duration = duration;
+        });
+    };
+
+    /**
+     * How long the meeting itself lasted - the audio file's own length, or, when there's no
+     * audio (transcript-only meeting), the last thing said in the transcript.
+     */
+    total_duration = $derived.by(() => {
+        if (this.audio_duration !== undefined) return format_timestamp(this.audio_duration);
+        if (this.transcript instanceof Error || this.transcript.length === 0) {
+            return format_timestamp(0);
+        }
+        const last_block = this.transcript[this.transcript.length - 1];
+        return format_timestamp(last_block.end ?? last_block.start);
+    });
 
     /** Persist the transcript to disk after a short debounce (e.g. on speaker rename). */
     #save_transcript_soon = () => {
@@ -152,8 +193,11 @@ class MeetingContext {
         for (let i = 0; i < this.transcript.length; i++) {
             const block = this.transcript[i];
             // A reloaded transcript has no `end` (only block starts are persisted), so
-            // approximate it with the start of the next speaker turn.
-            const end = block.end ?? this.transcript[i + 1]?.start ?? block.start;
+            // approximate it with the start of the next speaker turn - and, for the last
+            // block, with the end of the recording, otherwise whoever speaks last would be
+            // credited with no speaking time at all.
+            const end =
+                block.end ?? this.transcript[i + 1]?.start ?? this.audio_duration ?? block.start;
             speaker_time[block.speaker] =
                 (speaker_time[block.speaker] || 0) + Math.max(0, end - block.start);
         }
@@ -170,6 +214,7 @@ class MeetingContext {
             const exact_percentage = (time / total_speaking_time) * 100;
             return {
                 name,
+                seconds: time,
                 percentage: Math.floor(exact_percentage),
                 remainder: exact_percentage - Math.floor(exact_percentage),
             };
@@ -182,7 +227,7 @@ class MeetingContext {
         }
 
         return entries
-            .map(({name, percentage}) => ({name, percentage}))
+            .map(({name, seconds, percentage}) => ({name, seconds, percentage}))
             .sort((a, b) => b.percentage - a.percentage);
     });
 
@@ -194,6 +239,7 @@ class MeetingContext {
         this.meeting_name = title;
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
+        this.audio_duration = undefined;
         this.transcript = [];
 
         if (!this.#settings.save_path) return;
@@ -202,8 +248,10 @@ class MeetingContext {
         const audio_path = `${folder_path}/capture.wav`;
         const audio_exists = await exists(audio_path);
         if (audio_exists) {
+            const asset_path = convertFileSrc(audio_path);
             this.audio_raw_path = audio_path;
-            this.audio_asset_path = convertFileSrc(audio_path);
+            this.audio_asset_path = asset_path;
+            this.#load_audio_duration(asset_path);
         }
 
         const transcript_path = `${folder_path}/transcript.txt`;
@@ -220,6 +268,7 @@ class MeetingContext {
         this.transcript_timer.start();
         this.audio_raw_path = raw_path;
         this.audio_asset_path = asset_path;
+        this.#load_audio_duration(asset_path);
         if (this.#settings.deepgram_key) {
             this.transcript = await generate_transcript(raw_path, this.#settings.deepgram_key);
             console.log('transcript resultat', this.transcript);
@@ -272,6 +321,7 @@ class MeetingContext {
     reset = async () => {
         this.audio_raw_path = undefined;
         this.audio_asset_path = undefined;
+        this.audio_duration = undefined;
         this.transcript = [];
         this.has_transcript_file = false;
         this.meeting_name = 'Nouvelle réunion';

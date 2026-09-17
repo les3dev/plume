@@ -200,10 +200,7 @@
                     {/if}
                 </div>
                 <div class="flex grow flex-col overflow-auto">
-                    <TranscriptEditor
-                        transcript={meeting_context.transcript}
-                        duration={meeting_context.transcript_timer.value}
-                    />
+                    <TranscriptEditor transcript={meeting_context.transcript} />
                 </div>
             </div>
         {/if}
@@ -251,10 +248,7 @@
                 {/if}
             </div>
             <div class="flex grow flex-col overflow-auto">
-                <TranscriptEditor
-                    transcript={meeting_context.transcript}
-                    duration={meeting_context.transcript_timer.value}
-                />
+                <TranscriptEditor transcript={meeting_context.transcript} />
             </div>
         </div>
     {/if}
