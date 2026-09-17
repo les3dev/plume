@@ -25,7 +25,7 @@ serde_json = "1"
 tauri-plugin-mic-recorder = "2.0.0"
 tauri-plugin-store = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
+tauri-plugin-fs = { version = "2", features = ["watch"] }
 tauri-plugin-http = "2"
 tauri-plugin-notification = "2"
 cpal = "0.15"
