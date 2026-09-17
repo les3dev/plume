@@ -1,6 +1,7 @@
 mod audio;
 mod capture_state;
 mod commands;
+mod mic_watcher;
 
 use crate::{
     capture_state::CaptureState, commands::start_capture::start_capture,
@@ -24,6 +25,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![start_capture, stop_capture])
         .setup(|app| {
+            crate::mic_watcher::start(app.handle().clone());
+
             if let Some(tray) = app.tray_by_id("main") {
                 // "false" sur stop = désactivé au démarrage car on n'enregistre pas encore
                 let start = MenuItem::with_id(app, "start", "Commencer l'enregistrement", true, None::<&str>)?;
