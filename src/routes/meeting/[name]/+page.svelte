@@ -17,6 +17,8 @@
     import Popover from '$lib/widgets/Popover.svelte';
     import MicIcon from '$lib/icons/MicIcon.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
+    import TrashIcon from '$lib/icons/TrashIcon.svelte';
+    import ActionButton from '$lib/widgets/ActionButton.svelte';
 
     const meeting_context = get_meeting_context();
     const meetings_context = get_meetings_context();
@@ -79,6 +81,12 @@
     const copy = async () => {
         await navigator.clipboard.writeText(meeting_context.transcript_text);
     };
+
+    const delete_meeting = async () => {
+        const error = await meeting_context.delete_meeting();
+        if (error instanceof Error) return;
+        goto('/', {replaceState: true});
+    };
 </script>
 
 <div class="flex h-screen flex-col">
@@ -117,6 +125,20 @@
         >
             <FolderIcon --size="1.4rem" />
         </button>
+        <ActionButton
+            class="btn ghost icon"
+            title="Supprimer la réunion"
+            onaction={delete_meeting}
+            confirm={{
+                title: 'Supprimer la réunion',
+                description: `"${meeting_context.meeting_name}" et tous ses fichiers (audio, transcript, documents générés) seront définitivement supprimés.`,
+                button_text: 'Supprimer',
+                button_class: 'btn error',
+            }}
+            loading_text="Suppression…"
+        >
+            <TrashIcon --size="1.2rem" />
+        </ActionButton>
         <button class="btn ghost icon" title="Réglages" onclick={() => goto('/settings')}>
             <SettingsIcon --size="1.2rem" />
         </button>
