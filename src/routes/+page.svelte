@@ -7,7 +7,9 @@
     import {get_meetings_context} from '$lib/meetings/meetings_context.svelte';
     import Dialog from '$lib/widgets/Dialog.svelte';
     import FolderIcon from '$lib/icons/FolderIcon.svelte';
+    import MicIcon from '$lib/icons/MicIcon.svelte';
     import {openPath} from '@tauri-apps/plugin-opener';
+    import {invoke} from '@tauri-apps/api/core';
 
     const settings = get_settings_context();
     const meetings = get_meetings_context();
@@ -64,6 +66,13 @@
             }}
         >
             <FolderIcon --size="1.4rem" />
+        </button>
+        <button
+            class="btn ghost icon"
+            title="Test mic-activity notification"
+            onclick={() => invoke('test_mic_notification')}
+        >
+            <MicIcon --size="1.2rem" />
         </button>
         <button
             class="btn ghost icon"
