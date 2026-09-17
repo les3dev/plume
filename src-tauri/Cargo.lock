@@ -3097,7 +3097,9 @@ name = "plume"
 version = "0.1.0"
 dependencies = [
  "audio-capture",
+ "coreaudio-sys",
  "cpal",
+ "mac-notification-sys",
  "serde",
  "serde_json",
  "tauri",

@@ -44,15 +44,26 @@
     // Starting a recording from the tray shouldn't require an existing meeting to already
     // be open: create one on the fly with a generic name (renamable later) and jump straight
     // into it with the recording auto-started.
-    $effect(() => {
-        const unlisten = listen('tray-start-recording', async () => {
-            const result = await meetings_context.create_meeting('Nouvelle réunion');
-            if (!result) return;
-            meetings_context.pending_autostart_folder = result.folder_name;
-            await goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
-        });
+    const start_meeting_and_autostart = async () => {
+        const result = await meetings_context.create_meeting('Nouvelle réunion');
+        if (!result) return;
+        meetings_context.pending_autostart_folder = result.folder_name;
+        await goto(`/meeting/${encodeURIComponent(result.folder_name)}`);
+    };
 
-        return async () => (await unlisten)();
+    // "mic-activity-detected" is emitted by the Rust backend once the user clicks the
+    // native notification it shows when *any* app (Discord, Teams, Meet, ...) turns the
+    // microphone on - not just Plume's own capture. The notification itself (and its
+    // click handling) is done natively on the Rust side via mac-notification-sys, since
+    // tauri-plugin-notification's action-button support only exists on mobile.
+    $effect(() => {
+        const unlisten_tray = listen('tray-start-recording', start_meeting_and_autostart);
+        const unlisten_mic = listen('mic-activity-detected', start_meeting_and_autostart);
+
+        return async () => {
+            (await unlisten_tray)();
+            (await unlisten_mic)();
+        };
     });
 </script>
 
