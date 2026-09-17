@@ -9,7 +9,7 @@ import {
 } from '$lib/transcribe/generate_transcript';
 import {identify_speakers as run_speaker_identification} from '$lib/transcribe/identify_speakers';
 import {convertFileSrc} from '@tauri-apps/api/core';
-import {exists, readDir, readTextFile, rename, writeTextFile} from '@tauri-apps/plugin-fs';
+import {exists, readDir, readTextFile, remove, rename, writeTextFile} from '@tauri-apps/plugin-fs';
 import {setContext, getContext} from 'svelte';
 import {notify} from '$lib/helpers/notify';
 import {catch_error} from '$lib/helpers/catch_error';
@@ -108,6 +108,30 @@ class MeetingContext {
         } else {
             this.on_meeting_deleted?.();
         }
+    };
+
+    /**
+     * Delete the meeting folder and everything inside it. Returns an `Error` when it failed, so
+     * the page can keep the user on the meeting instead of navigating away.
+     */
+    delete_meeting = async () => {
+        const save_path = this.#settings.save_path;
+        if (!save_path || !this.folder_name) return;
+
+        // Drop the debounced writes first, otherwise a pending transcript save or folder
+        // rename would fire against a folder that no longer exists.
+        clearTimeout(this.#save_timer);
+        clearTimeout(this.#rename_timer);
+        this.is_saving_transcript = false;
+
+        const folder_path = `${save_path}/${this.folder_name}`;
+        const error = await catch_error(() => remove(folder_path, {recursive: true}));
+        if (error instanceof Error) {
+            console.error('Failed to delete meeting folder', error);
+            return error;
+        }
+
+        await this.reset();
     };
 
     /** Rename a speaker across every block that currently uses `old_name`. */
