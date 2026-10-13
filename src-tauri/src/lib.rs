@@ -8,9 +8,19 @@ use crate::{
     commands::stop_capture::stop_capture,
 };
 use tauri::{
-    Emitter, Listener,
+    AppHandle, Emitter, Listener, Manager, RunEvent, WindowEvent,
     menu::{Menu, MenuItem},
 };
+
+/// Brings the main window back (it is only ever hidden, never destroyed, so the frontend and
+/// its event listeners stay alive while the app runs in the background).
+pub fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        window.show().ok();
+        window.unminimize().ok();
+        window.set_focus().ok();
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,20 +37,30 @@ pub fn run() {
             start_capture,
             stop_capture
         ])
+        // Closing the window only hides it so the app keeps running (mic notification, tray).
+        // Quit with Cmd+Q or the tray menu.
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                window.hide().ok();
+            }
+        })
         .setup(|app| {
             crate::mic_watcher::start(app.handle().clone());
 
             if let Some(tray) = app.tray_by_id("main") {
                 // "false" sur stop = désactivé au démarrage car on n'enregistre pas encore
+                let open  = MenuItem::with_id(app, "open",  "Ouvrir Plume",                true, None::<&str>)?;
                 let start = MenuItem::with_id(app, "start", "Commencer l'enregistrement", true, None::<&str>)?;
                 let stop  = MenuItem::with_id(app, "stop",  "Arrêter l'enregistrement",   false, None::<&str>)?;
                 let quit  = MenuItem::with_id(app, "quit",  "Quitter l'application",       true, None::<&str>)?;
 
-                let menu = Menu::with_items(app, &[&start, &stop, &quit])?;
+                let menu = Menu::with_items(app, &[&open, &start, &stop, &quit])?;
                 tray.set_menu(Some(menu))?;
 
                 tray.on_menu_event(|app, event| {
                     match event.id.as_ref() {
+                        "open"  => { show_main_window(app); }
                         "start" => { app.emit("tray-start-recording", ()).ok(); }
                         "stop"  => { app.emit("tray-stop-recording", ()).ok(); }
                         "quit"  => { app.exit(0); }
@@ -72,6 +92,12 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // Clicking the Dock icon while no window is visible.
+            if let RunEvent::Reopen { .. } = event {
+                show_main_window(app);
+            }
+        });
 }

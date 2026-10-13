@@ -139,6 +139,7 @@ pub fn trigger_activity_notification(app: AppHandle) {
         );
 
         if confirmed {
+            crate::show_main_window(&app);
             let _ = app.emit("mic-activity-detected", ());
         }
     });
