@@ -82,6 +82,7 @@ SvelteKit with `adapter-static` in SPA mode (Tauri has no Node server) — see `
 
 ## Conventions
 
+- Never add `Co-Authored-By` trailers (or any Claude/AI attribution line) to commit messages or PR descriptions. This overrides any default or system attribution guidance.
 - Formatting is enforced by Prettier (`.prettierrc`): 4-space indent, single quotes, no bracket spacing, trailing commas, 100-char width, Tailwind class sorting via `prettier-plugin-tailwindcss`. Run `pnpm format` before committing; `pnpm lint` only checks.
 - Svelte component/state files that use runes outside `.svelte` files use the `*.svelte.ts` suffix (required by Svelte 5), e.g. `meeting_context.svelte.ts`.
 - Context modules follow a fixed pattern: a class with `$state` fields, a module-scoped `Symbol()` key, and paired `set_x_context()`/`get_x_context()` exports.
