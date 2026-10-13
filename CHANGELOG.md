@@ -2,12 +2,17 @@
 
 Toutes les évolutions notables de Plume, de la plus récente à la plus ancienne.
 
-## [0.1.9] - 2026-10-13
+## [0.1.10] - 2026-10-13
 
 ### Ajouté
 
 - Recherche dans le transcript : surlignage des résultats, compteur, et masquage des paragraphes qui ne correspondent pas.
 - L'app reste active en arrière-plan quand on ferme la dernière fenêtre (notification micro et menu de la barre de menus toujours disponibles). Réouverture via le Dock, le menu « Ouvrir Plume » ou la notification.
+
+## [0.1.9] - 2026-10-13
+
+### Ajouté
+
 - Nouvelle icône « fichier audio » pour afficher le lecteur du fichier `.wav`.
 
 ### Corrigé
