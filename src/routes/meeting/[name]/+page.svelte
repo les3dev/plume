@@ -16,6 +16,7 @@
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {parse_folder_name} from '$lib/helpers/parse_folder_name.js';
     import Popover from '$lib/widgets/Popover.svelte';
+    import SearchIcon from '$lib/icons/SearchIcon.svelte';
     import FileVolumeIcon from '$lib/icons/FileVolumeIcon.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import TrashIcon from '$lib/icons/TrashIcon.svelte';
@@ -32,6 +33,7 @@
     let is_audio_open = $state(false);
     let show_dialog_deleted = $state(false);
     let should_autostart = $state(false);
+    let search_query = $state('');
 
     const folder_path = $derived(`${settings_context.save_path}/${folder_name}`);
     const meeting_date = $derived(
@@ -95,6 +97,33 @@
         goto('/', {replaceState: true});
     };
 </script>
+
+{#snippet toolbar()}
+    <div class="flex flex-wrap items-center gap-2 px-4 pb-2">
+        <label class="flex items-center gap-2 rounded-card border border-fg-3 px-3 py-1">
+            <SearchIcon --size="1.1rem" />
+            <input
+                class="h-fit! w-40 rounded-none! border-none! bg-transparent! p-0!"
+                type="search"
+                placeholder="Rechercher…"
+                bind:value={search_query}
+            />
+        </label>
+        <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
+        {#if settings_context.openrouter_key}
+            <button
+                class="btn ghost"
+                disabled={meeting_context.is_identifying_speakers}
+                onclick={() => meeting_context.identify_speakers(folder_path)}
+            >
+                <SparklesIcon --size="1.2rem" />
+                {meeting_context.is_identifying_speakers
+                    ? 'Identification en cours...'
+                    : 'Identifier les speakers'}
+            </button>
+        {/if}
+    </div>
+{/snippet}
 
 <div class="flex h-screen flex-col">
     <header class="flex items-center gap-2 p-4 pb-2 [&>:not(:nth-child(2))]:shrink-0">
@@ -189,25 +218,12 @@
             </div>
         {:else}
             <div class="flex grow flex-col overflow-hidden">
-                <div class="flex gap-2 px-4 pb-2">
-                    <button class="btn ghost" onclick={copy}
-                        ><CopyIcon --size="1.2rem" />Copier</button
-                    >
-                    {#if settings_context.openrouter_key}
-                        <button
-                            class="btn ghost"
-                            disabled={meeting_context.is_identifying_speakers}
-                            onclick={() => meeting_context.identify_speakers(folder_path)}
-                        >
-                            <SparklesIcon --size="1.2rem" />
-                            {meeting_context.is_identifying_speakers
-                                ? 'Identification en cours...'
-                                : 'Identifier les speakers'}
-                        </button>
-                    {/if}
-                </div>
+                {@render toolbar()}
                 <div class="flex grow flex-col overflow-auto">
-                    <TranscriptEditor transcript={meeting_context.transcript} />
+                    <TranscriptEditor
+                        transcript={meeting_context.transcript}
+                        query={search_query}
+                    />
                 </div>
             </div>
         {/if}
@@ -239,23 +255,9 @@
         {/if}
     {:else}
         <div class="flex grow flex-col overflow-hidden">
-            <div class="flex gap-2 px-4 pb-2">
-                <button class="btn ghost" onclick={copy}><CopyIcon --size="1.2rem" />Copier</button>
-                {#if settings_context.openrouter_key}
-                    <button
-                        class="btn ghost"
-                        disabled={meeting_context.is_identifying_speakers}
-                        onclick={() => meeting_context.identify_speakers(folder_path)}
-                    >
-                        <SparklesIcon --size="1.2rem" />
-                        {meeting_context.is_identifying_speakers
-                            ? 'Identification en cours...'
-                            : 'Identifier les speakers'}
-                    </button>
-                {/if}
-            </div>
+            {@render toolbar()}
             <div class="flex grow flex-col overflow-auto">
-                <TranscriptEditor transcript={meeting_context.transcript} />
+                <TranscriptEditor transcript={meeting_context.transcript} query={search_query} />
             </div>
         </div>
     {/if}
