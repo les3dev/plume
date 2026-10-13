@@ -6,6 +6,7 @@
     import TranscriptEditor from '$lib/transcribe/TranscriptEditor.svelte';
     import SuperRecorder from '$lib/recorder/SuperRecorder.svelte';
     import {goto} from '$app/navigation';
+    import {onDestroy} from 'svelte';
     import {getCurrentWindow} from '@tauri-apps/api/window';
     import ProgressCircle from '$lib/widgets/ProgressCircle.svelte';
     import {get_meeting_context} from '$lib/meeting/meeting_context.svelte';
@@ -15,7 +16,7 @@
     import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
     import {parse_folder_name} from '$lib/helpers/parse_folder_name.js';
     import Popover from '$lib/widgets/Popover.svelte';
-    import MicIcon from '$lib/icons/MicIcon.svelte';
+    import FileVolumeIcon from '$lib/icons/FileVolumeIcon.svelte';
     import SparklesIcon from '$lib/icons/SparklesIcon.svelte';
     import TrashIcon from '$lib/icons/TrashIcon.svelte';
     import ActionButton from '$lib/widgets/ActionButton.svelte';
@@ -70,8 +71,14 @@
         };
     });
 
+    // Leaving the page: forget the folder so reopening it reloads from disk.
+    onDestroy(() => (meeting_context.folder_name = ''));
+
     meeting_context.on_meeting_renamed = (new_folder_name) => {
-        goto(`/meeting/${encodeURIComponent(new_folder_name)}`, {replaceState: true});
+        goto(`/meeting/${encodeURIComponent(new_folder_name)}`, {
+            replaceState: true,
+            keepFocus: true,
+        });
     };
 
     meeting_context.on_meeting_deleted = () => {
@@ -90,13 +97,13 @@
 </script>
 
 <div class="flex h-screen flex-col">
-    <header class="flex items-center gap-2 p-4 pb-2">
+    <header class="flex items-center gap-2 p-4 pb-2 [&>:not(:nth-child(2))]:shrink-0">
         <button class="btn ghost icon" onclick={() => goto('/')}>
             <ChevronIcon />
         </button>
-        <div class="me-auto flex flex-wrap items-center font-serif text-lg font-semibold">
+        <div class="me-auto flex min-w-0 flex-col font-serif text-lg font-semibold">
             <input
-                class="me-2 h-fit! rounded-none! border-none! bg-transparent! px-0! font-serif! text-lg! font-semibold!"
+                class="h-fit! max-w-full! min-w-0 rounded-none! border-none! bg-transparent! px-0! font-serif! text-lg! font-semibold!"
                 type="text"
                 size={meeting_context.meeting_name.length || 1}
                 bind:value={
@@ -110,7 +117,7 @@
             <Popover bind:is_open={is_audio_open} offset_y={10}>
                 {#snippet target()}
                     <button class="btn ghost icon" onclick={() => (is_audio_open = !is_audio_open)}
-                        ><MicIcon --size="1.2rem" /></button
+                        ><FileVolumeIcon --size="1.3rem" /></button
                     >
                 {/snippet}
                 <audio controls src={meeting_context.audio_asset_path}></audio>

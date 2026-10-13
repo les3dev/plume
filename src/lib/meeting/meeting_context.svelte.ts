@@ -232,6 +232,9 @@ class MeetingContext {
     });
 
     load_meeting = async (folder_name: string) => {
+        // Already showing this folder (e.g. after an in-app rename): reloading would reset the
+        // title being typed and blank the audio/transcript for a moment.
+        if (folder_name === this.folder_name) return;
         this.folder_name = folder_name;
         const parts = folder_name.split(' ');
         const title = parts.slice(1).join(' ');
