@@ -17,6 +17,10 @@ use coreaudio_sys::{
 use mac_notification_sys::{MainButton, Notification, NotificationResponse};
 use std::os::raw::c_void;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+
+/// Only one notification may be pending at a time: each one parks a thread in
+/// a blocking wait until the user interacts with it.
+static NOTIFICATION_PENDING: AtomicBool = AtomicBool::new(false);
 use tauri::{AppHandle, Emitter, Manager};
 
 // kAudioObjectPropertyElementMain: stable value (0) across SDKs; the symbol
@@ -117,6 +121,9 @@ unsafe extern "C" fn running_listener(
 /// thread since that wait can be arbitrarily long (the notification stays
 /// in Notification Center after the banner disappears).
 pub fn trigger_activity_notification(app: AppHandle) {
+    if NOTIFICATION_PENDING.swap(true, Ordering::SeqCst) {
+        return;
+    }
     std::thread::spawn(move || {
         let response = Notification::new()
             .title("Plume")
@@ -124,6 +131,7 @@ pub fn trigger_activity_notification(app: AppHandle) {
             .main_button(MainButton::SingleAction("Créer une réunion"))
             .wait_for_click(true)
             .send();
+        NOTIFICATION_PENDING.store(false, Ordering::SeqCst);
 
         let confirmed = matches!(
             response,

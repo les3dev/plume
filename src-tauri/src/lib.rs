@@ -5,7 +5,7 @@ mod mic_watcher;
 
 use crate::{
     capture_state::CaptureState, commands::start_capture::start_capture,
-    commands::stop_capture::stop_capture, commands::test_mic_notification::test_mic_notification,
+    commands::stop_capture::stop_capture,
 };
 use tauri::{
     Emitter, Listener,
@@ -25,8 +25,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             start_capture,
-            stop_capture,
-            test_mic_notification
+            stop_capture
         ])
         .setup(|app| {
             crate::mic_watcher::start(app.handle().clone());
