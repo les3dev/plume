@@ -16,7 +16,7 @@ Frontend (run from repo root):
 - `pnpm check` — svelte-kit sync + svelte-check (type checking)
 - `pnpm lint` — prettier `--check .`
 - `pnpm format` — prettier `--write .`
-- `pnpm release <version>` — bumps `package.json` version, commits, tags `v<version>`, and pushes (must be on `main`, clean tree, up to date with `origin/main`); the pushed tag triggers `.github/workflows/release.yml` which builds and publishes the Tauri app for `aarch64-apple-darwin` and `x86_64-apple-darwin`
+- `pnpm release <version>` — bumps `package.json` version, commits, tags `v<version>`, and pushes (must be on `main`, clean tree, up to date with `origin/main`); the pushed tag triggers `.github/workflows/release.yml` which builds and publishes the Tauri app for `aarch64-apple-darwin` and `x86_64-apple-darwin`. It refuses to run unless `CHANGELOG.md` has a `## [<version>]` entry (the only file allowed to be dirty; it is committed with the version bump). Prefer the `/release [version]` slash command (`.claude/commands/release.md`), which writes that changelog entry from the commits since the last tag and then runs the script
 
 Rust backend (`src-tauri/`):
 

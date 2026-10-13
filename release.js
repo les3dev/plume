@@ -39,8 +39,12 @@ function checkPreconditions() {
     }
     console.log('✓ On main branch');
 
-    // Check for uncommitted changes
-    const status = exec('git status --porcelain');
+    // Check for uncommitted changes (CHANGELOG.md is allowed: it is updated just before releasing
+    // and committed together with the version bump)
+    const status = exec('git status --porcelain')
+        .split('\n')
+        .filter((line) => line.trim() && line.slice(3) !== 'CHANGELOG.md')
+        .join('\n');
     if (status) {
         console.error('Error: You have uncommitted changes:');
         console.error(status);
@@ -62,6 +66,16 @@ function checkPreconditions() {
         process.exit(1);
     }
     console.log('✓ Up to date with origin/main');
+}
+
+function checkChangelog(version) {
+    const changelog = fs.existsSync('CHANGELOG.md') ? fs.readFileSync('CHANGELOG.md', 'utf8') : '';
+    if (!changelog.includes(`## [${version}]`)) {
+        console.error(`Error: CHANGELOG.md has no "## [${version}]" entry`);
+        console.error('Use the /release command, or add the entry by hand first.');
+        process.exit(1);
+    }
+    console.log(`✓ CHANGELOG.md has an entry for ${version}`);
 }
 
 function updatePackageJson(version) {
@@ -87,7 +101,7 @@ function createRelease(version) {
     const tag = `v${version}`;
 
     console.log('\nCommitting changes...');
-    exec('git add package.json');
+    exec('git add package.json CHANGELOG.md');
     exec(`git commit -m "release: ${tag}"`);
     console.log('✓ Changes committed');
 
@@ -104,6 +118,7 @@ function createRelease(version) {
 // Main execution
 try {
     checkPreconditions();
+    checkChangelog(newVersion);
     updatePackageJson(newVersion);
     createRelease(newVersion);
 
