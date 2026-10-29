@@ -43,7 +43,7 @@ function checkPreconditions() {
     // and committed together with the version bump)
     const status = exec('git status --porcelain')
         .split('\n')
-        .filter((line) => line.trim() && line.slice(3) !== 'CHANGELOG.md')
+        .filter((line) => line.trim() && line.replace(/^\s*\S+\s+/, '') !== 'CHANGELOG.md')
         .join('\n');
     if (status) {
         console.error('Error: You have uncommitted changes:');
