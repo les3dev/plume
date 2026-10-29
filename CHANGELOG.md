@@ -2,6 +2,12 @@
 
 Toutes les évolutions notables de Plume, de la plus récente à la plus ancienne.
 
+## [0.1.11] - 2026-10-29
+
+### Modifié
+
+- L'application est désormais signée et notarisée par Apple : elle s'installe et s'ouvre sans avertissement « développeur non identifié ». Les autorisations micro et capture audio système devront être accordées à nouveau une fois.
+
 ## [0.1.10] - 2026-10-13
 
 ### Ajouté
