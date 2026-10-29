@@ -2,6 +2,12 @@
 
 Toutes les évolutions notables de Plume, de la plus récente à la plus ancienne.
 
+## [0.1.12] - 2026-10-29
+
+### Corrigé
+
+- La version Intel (x86_64) de l'application est de nouveau publiée.
+
 ## [0.1.11] - 2026-10-29
 
 ### Modifié
