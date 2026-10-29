@@ -53,10 +53,39 @@ jobs:
                   mkdir -p ../target/release
                   cp target/release/libAudioCapture.dylib ../target/release/libAudioCapture.dylib
 
+            - name: Import signing certificate and sign dylib
+              env:
+                  APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+                  APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+                  APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+              run: |
+                  KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+                  KEYCHAIN_PASSWORD="$(uuidgen)"
+                  echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+                  security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+                  security set-keychain-settings -lut 21600 "$KEYCHAIN"
+                  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+                  security import "$RUNNER_TEMP/cert.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+                  security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+                  security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+                  rm "$RUNNER_TEMP/cert.p12"
+
+                  # La dylib est une resource : elle doit etre signee (hardened runtime + timestamp) pour la notarisation
+                  codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" src-tauri/target/release/libAudioCapture.dylib
+                  codesign --verify --strict --verbose=2 src-tauri/target/release/libAudioCapture.dylib
+
+                  # Cle API App Store Connect pour la notarisation
+                  echo "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/AuthKey.p8"
+                  echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+
             - name: Build and release with Tauri
               uses: tauri-apps/tauri-action@v0
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+                  APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+                  APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
               with:
                   tagName: ${{ github.ref_name }}
                   releaseName: 'Plume ${{ github.ref_name }}'
