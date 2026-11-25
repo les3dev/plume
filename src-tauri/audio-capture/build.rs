@@ -53,13 +53,14 @@ fn main() {
     // ── Copy the dylib next to the Cargo output binary ───────────────────────
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    // OUT_DIR is .../target/<profile>/build/<crate>-<hash>/out
-    // The binary lives at    .../target/<profile>/
-    // So we go up 3 levels:  out → <crate>-<hash> → build → target/<profile>
+    // OUT_DIR is .../target/<profile>/build/<crate>-<hash>/out (Cargo < 1.100)
+    //        or .../target/<profile>/build/<crate>/<hash>/out (Cargo >= 1.100)
+    // The binary lives at .../target/<profile>/, i.e. the parent of the nearest `build` dir.
     let target_dir = out_dir
-        .parent().unwrap() // <crate>-<hash>
-        .parent().unwrap() // build
-        .parent().unwrap(); // target/<profile>  (e.g. target/debug)
+        .ancestors()
+        .find(|p| p.file_name().is_some_and(|n| n == "build"))
+        .and_then(|build| build.parent())
+        .unwrap_or_else(|| panic!("Could not find target/<profile> above OUT_DIR={}", out_dir.display()));
 
     eprintln!(">>> target_dir resolved to: {}", target_dir.display());
 
