@@ -37,6 +37,8 @@ mac-notification-sys = "0.6"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-positioner = { version = "2.3.1", features = ["tray-icon"] }
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 
 # Vendored with a fix for a busy-wait in the click-wait loop (see objc/notify.m, "PLUME PATCH").
 [patch.crates-io]

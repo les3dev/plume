@@ -133,6 +133,8 @@
         },
         "positioner:allow-move-window",
         "core:webview:allow-create-webview-window",
-        "notification:default"
+        "notification:default",
+        "updater:default",
+        "process:allow-restart"
     ]
 }

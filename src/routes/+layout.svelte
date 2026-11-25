@@ -10,6 +10,7 @@
     import {WebviewWindow} from '@tauri-apps/api/webviewWindow';
     import {listen} from '@tauri-apps/api/event';
     import {goto} from '$app/navigation';
+    import UpdateBanner from '$lib/updater/UpdateBanner.svelte';
 
     let {children} = $props();
 
@@ -67,4 +68,5 @@
     });
 </script>
 
+<UpdateBanner />
 {@render children()}
