@@ -2,6 +2,12 @@
 
 Toutes les évolutions notables de Plume, de la plus récente à la plus ancienne.
 
+## [0.2.0] - 2026-11-25
+
+### Ajouté
+
+- Mises à jour automatiques : Plume vérifie au démarrage (puis toutes les 6 h) si une nouvelle version est disponible et propose de l'installer en un clic. L'app redémarre ensuite toute seule. Cette version doit encore être installée à la main, une dernière fois.
+
 ## [0.1.12] - 2026-10-29
 
 ### Corrigé
